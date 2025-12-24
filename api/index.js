@@ -3,11 +3,11 @@
 // ==========================================
 // 1. 引入依赖
 // ==========================================
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const bcrypt = require('bcryptjs'); // 用于密码加密
-require('dotenv').config(); // 读取 .env 配置
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv'; // 读取 .env 配置
 
 // ==========================================
 // 2. 初始化应用 & 中间件
