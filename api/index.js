@@ -337,4 +337,4 @@ app.delete('/api/playlists/:id', async (req, res) => {
 //   console.log(`🚀 后端服务器已启动，运行在 http://localhost:${PORT}`);
 // });
 
-module.exports = app;
+export default app;
