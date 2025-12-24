@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+:root {
+  --primary-color: #22c55e;
+}
+
+/* 定义一个通用的高亮类 */
+.text-primary {
+  color: var(--primary-color) !important;
+}
+.bg-primary {
+  background-color: var(--primary-color) !important;
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+}
