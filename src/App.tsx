@@ -76,7 +76,7 @@ export const PlayerProvider = ({ children }) => {
   // 1. 全局状态定义
   // ==============================
 
-  const [themeColor, setThemeColor] = useState('#22c55e');
+  const [themeColor, setThemeColor] = useState('#737373');
   
   // 数据源
   const [allSongs, setAllSongs] = useState([]);
