@@ -70,7 +70,7 @@ export const PlayerContext = createContext();
 // ==========================================
 export const PlayerProvider = ({ children }) => {
   // 后端 API 地址 (请确保端口号与 server.js 一致)
-  const API_URL = 'http://localhost:5000/api';
+ const API_URL = '/api';
 
   // ==============================
   // 1. 全局状态定义
