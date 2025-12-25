@@ -3,7 +3,7 @@ import axios from 'axios';
 import { 
   Play, Pause, SkipBack, SkipForward, Volume2, Search, Home, Library, 
   ListMusic, Heart, Maximize2, ChevronDown, Repeat, Shuffle, X, Plus,
-  ArrowLeft, Clock, BadgeCheck, Mic2, Users, ListPlus, Repeat1, ArrowRight  
+  ArrowLeft, Clock, BadgeCheck, Mic2, Users, ListPlus, Repeat1, ArrowRight,Star  
 } from 'lucide-react';
 
 // --- 全局样式 ---
@@ -1680,20 +1680,16 @@ const PlayerBar = () => {
       <div 
         className="mx-0 md:mx-6 mb-0 md:mb-6 h-[70px] md:h-[88px] rounded-none md:rounded-3xl flex items-center justify-between px-4 md:px-6 relative overflow-hidden transition-all ease-out"
         style={{
-          // 1. 背景渐变：模拟顶部反光 (上亮下暗)
           background: 'linear-gradient(to bottom, rgba(255,255,255,0.12) 0%, rgba(0,0,0,0.3) 100%)',
-          // 2. 强模糊：像厚玻璃
           backdropFilter: 'blur(50px) saturate(120%)', 
-          // 3. 边缘反光：顶部锐利白线 (inset shadow) + 外部投影
-          boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.1), 0 10px 40px -5px rgba(0,0,0,0.6)',
-          // 4. 极细描边
+          boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.13), 0 10px 40px -5px rgba(0,0,0,0.6)',
           border: '1px solid rgba(255,255,255,0.05)',
         }}
         onClick={(e) => {
           if (window.innerWidth < 768) setShowLyrics(true);
         }}
       >
-        {/* 顶部微弱的高光流光效果 (可选装饰) */}
+        {/* 顶部微弱的高光流光效果 */}
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-50"></div>
 
         {/* 手机端顶部极光进度条 */}
@@ -1708,10 +1704,9 @@ const PlayerBar = () => {
            />
         </div>
 
-        {/* --- 左侧：方形封面 + 静止信息 --- */}
+        {/* --- 左侧：方形封面 + 信息 --- */}
         <div className="flex items-center gap-4 flex-1 w-0 min-w-0">
           
-          {/* 方形封面 (水晶质感) */}
           <div 
              className="relative flex-shrink-0 cursor-pointer group" 
              onClick={(e) => { e.stopPropagation(); setShowLyrics(true); }}
@@ -1719,34 +1714,24 @@ const PlayerBar = () => {
             <div 
               className="relative w-12 h-12 md:w-16 md:h-16 rounded-lg md:rounded-xl overflow-hidden shadow-lg transition-transform duration-300 group-hover:scale-105"
             >
-              <img 
-                src={currentSong.cover} 
-                className="w-full h-full object-cover" 
-                alt="cover" 
-              />
-              {/* 封面表面光泽 */}
+              <img src={currentSong.cover} className="w-full h-full object-cover" alt="cover" />
               <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent pointer-events-none opacity-100"></div>
-              
-              {/* 悬停时的遮罩 */}
               <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <Maximize2 size={20} className="text-white drop-shadow-md" />
               </div>
             </div>
           </div>
           
-          {/* 文本信息 (已移除跑马灯) */}
           <div className="overflow-hidden flex flex-col justify-center min-w-0">
-            {/* 歌名：静止 + 省略号 */}
             <div 
               className="text-white font-bold text-base cursor-pointer hover:underline truncate pr-4"
               title={currentSong.title}
               onClick={(e) => { e.stopPropagation(); setShowLyrics(true); }}
-              style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }} // 确保在透明背景上清晰
+              style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }} 
             >
               {currentSong.title}
             </div>
             
-            {/* 艺人名 */}
             <div 
               className="text-white/60 text-xs md:text-sm truncate cursor-pointer hover:text-white transition-colors w-fit font-medium"
               onClick={(e) => { e.stopPropagation(); goToArtist(currentSong.artist); }}
@@ -1768,32 +1753,17 @@ const PlayerBar = () => {
           
           <div className="flex items-center gap-6 md:gap-10">
             <Shuffle size={18} className="hidden md:block cursor-pointer text-white/40 hover:text-white transition-colors" />
+            <SkipBack size={26} className="hidden md:block cursor-pointer text-white/90 hover:text-white hover:scale-110 active:scale-90 transition-all drop-shadow-md" onClick={prevSong} />
             
-            <SkipBack 
-              size={26} 
-              className="hidden md:block cursor-pointer text-white/90 hover:text-white hover:scale-110 active:scale-90 transition-all drop-shadow-md" 
-              onClick={prevSong} 
-            />
-            
-            {/* 播放按钮：增强立体感 */}
             <button 
               onClick={(e) => { e.stopPropagation(); togglePlay(); }}
               className="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center bg-white text-black hover:scale-110 active:scale-95 transition-all relative z-10"
-              style={{
-                // 按钮本身的内发光和阴影，看起来像个物理按钮
-                boxShadow: isPlaying 
-                  ? `0 0 20px ${themeColor}60, inset 0 -2px 5px rgba(0,0,0,0.2)` 
-                  : 'inset 0 -2px 5px rgba(0,0,0,0.2)'
-              }}
+              style={{ boxShadow: isPlaying ? `0 0 20px ${themeColor}60, inset 0 -2px 5px rgba(0,0,0,0.2)` : 'inset 0 -2px 5px rgba(0,0,0,0.2)' }}
             >
               {isPlaying ? <Pause size={22} fill="black" /> : <Play size={22} fill="black" className="ml-1" />}
             </button>
             
-            <SkipForward 
-              size={26} 
-              className="hidden md:block cursor-pointer text-white/90 hover:text-white hover:scale-110 active:scale-90 transition-all drop-shadow-md" 
-              onClick={() => nextSong(false)} 
-            />
+            <SkipForward size={26} className="hidden md:block cursor-pointer text-white/90 hover:text-white hover:scale-110 active:scale-90 transition-all drop-shadow-md" onClick={() => nextSong(false)} />
             
             <button 
                onClick={toggleRepeat} 
@@ -1805,7 +1775,7 @@ const PlayerBar = () => {
             </button>
           </div>
           
-          {/* 桌面端进度条 */}
+          {/* 🌟 桌面端进度条：带星星滑块 */}
           <div className="hidden md:flex w-full items-center gap-3 text-[11px] text-white/40 font-medium font-mono">
             <span className="w-8 text-right">{formatTime(progress)}</span>
             
@@ -1828,15 +1798,27 @@ const PlayerBar = () => {
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" 
               />
               
-              {/* 拖动滑块 */}
+              {/* ✨ 拖动滑块：星星形状 */}
               <div 
-                className="absolute h-3 w-3 bg-white rounded-full shadow-lg pointer-events-none transition-all duration-200 z-10 scale-0 group-hover:scale-100"
+                className="absolute pointer-events-none transition-all duration-200 z-10 scale-0 group-hover:scale-100 flex items-center justify-center"
                 style={{ 
                   left: `${progressPercent}%`, 
-                  transform: 'translateX(-50%)',
-                  boxShadow: `0 0 10px ${themeColor}` 
+                  top: '50%',
+                  transform: 'translate(-50%, -50%)', // 完美居中
                 }}
-              />
+              >
+                {/* 星星背后的光晕 */}
+                <div className="absolute w-4 h-4 rounded-full blur-md" style={{ backgroundColor: themeColor }}></div>
+                
+                {/* 星星图标 */}
+                <Star 
+                  size={20} 
+                  fill={themeColor} // 填充主题色
+                  stroke="white"    // 白色描边，增加清晰度
+                  strokeWidth={2}
+                  className="relative z-10 drop-shadow-md"
+                />
+              </div>
             </div>
             
             <span className="w-8 text-left">{formatTime(currentSong.duration)}</span>
@@ -1845,32 +1827,18 @@ const PlayerBar = () => {
 
         {/* --- 右侧：音量与功能 --- */}
         <div className="hidden md:flex items-center justify-end w-1/3 gap-5 min-w-0">
-           <button 
-             className="p-2 rounded-full hover:bg-white/10 text-white/50 hover:text-white transition active:scale-90"
-             onClick={() => toggleLike(currentSong.id)}
-           >
+           <button className="p-2 rounded-full hover:bg-white/10 text-white/50 hover:text-white transition active:scale-90" onClick={() => toggleLike(currentSong.id)}>
               <Heart size={20} fill={likedSongs.has(currentSong.id) ? themeColor : "none"} style={{ color: likedSongs.has(currentSong.id) ? themeColor : '' }} />
            </button>
-           
-           <button 
-             className="p-2 rounded-full hover:bg-white/10 text-white/50 hover:text-white transition active:scale-90"
-             onClick={() => setShowLyrics(true)}
-           >
+           <button className="p-2 rounded-full hover:bg-white/10 text-white/50 hover:text-white transition active:scale-90" onClick={() => setShowLyrics(true)}>
              <Maximize2 size={20} />
            </button>
 
            <div className="flex items-center gap-2 group relative py-2">
              <Volume2 size={20} className="text-white/50 group-hover:text-white transition" />
              <div className="w-24 h-1 bg-black/20 rounded-full relative overflow-hidden border-b border-white/5">
-                <div 
-                  className="h-full bg-white transition-colors" 
-                  style={{ width: `${volume * 100}%`, backgroundColor: themeColor }}
-                />
-                <input 
-                  type="range" min="0" max="1" step="0.01" value={volume} 
-                  onChange={(e) => setVolume(parseFloat(e.target.value))} 
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                />
+                <div className="h-full bg-white transition-colors" style={{ width: `${volume * 100}%`, backgroundColor: themeColor }} />
+                <input type="range" min="0" max="1" step="0.01" value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} className="absolute inset-0 opacity-0 cursor-pointer" />
              </div>
            </div>
         </div>
