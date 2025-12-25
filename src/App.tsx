@@ -3,7 +3,7 @@ import axios from 'axios';
 import { 
   Play, Pause, SkipBack, SkipForward, Volume2, Search, Home, Library, 
   ListMusic, Heart, Maximize2, ChevronDown, Repeat, Shuffle, X, Plus,
-  ArrowLeft, Clock, BadgeCheck, Mic2, Users, ListPlus, Repeat1, ArrowRight  
+  ArrowLeft, ArrowRight, Clock, BadgeCheck, Mic2, Users, ListPlus, Repeat1 
 } from 'lucide-react';
 
 
