@@ -1457,6 +1457,9 @@ const LyricsPage = () => {
   const { currentSong, progress, setShowLyrics, isPlaying, likedSongs, toggleLike } = useContext(PlayerContext);
   const activeLyricRef = useRef(null);
   
+  // 🌟 新增：背景色状态，默认为深灰
+  const [bgColor, setBgColor] = useState('rgb(20, 20, 20)');
+
   // 计算当前歌词索引
   const activeLyricIndex = currentSong.lyrics?.findIndex((l, i) => {
     const next = currentSong.lyrics[i + 1];
@@ -1473,13 +1476,61 @@ const LyricsPage = () => {
     }
   }, [activeLyricIndex]);
 
+  // 🌟 核心逻辑：提取封面颜色
+  useEffect(() => {
+    if (!currentSong?.cover) return;
+
+    const img = new Image();
+    // 关键：允许跨域加载图片（需要图片服务器支持 CORS，大部分图床都支持）
+    img.crossOrigin = "Anonymous"; 
+    img.src = currentSong.cover;
+
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        // 将图片压缩为 1x1 像素，这会自动计算出平均主色调
+        canvas.width = 1;
+        canvas.height = 1;
+        ctx.drawImage(img, 0, 0, 1, 1);
+        
+        const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+        
+        // 🌟 降低亮度处理：乘以 0.5 ~ 0.8，防止背景太亮导致白色歌词看不清
+        // 这里使用 0.6 (60% 亮度)
+        const darkR = Math.floor(r * 0.6);
+        const darkG = Math.floor(g * 0.6);
+        const darkB = Math.floor(b * 0.6);
+
+        setBgColor(`rgb(${darkR}, ${darkG}, ${darkB})`);
+      } catch (e) {
+        console.warn("无法提取图片颜色 (可能是跨域限制)", e);
+        setBgColor('rgb(30, 30, 30)'); // 失败回退色
+      }
+    };
+
+    img.onerror = () => {
+      setBgColor('rgb(30, 30, 30)');
+    };
+
+  }, [currentSong.cover]);
+
   return (
-    <div className="fixed inset-0 bg-gradient-to-b from-neutral-800 to-black z-[70] animate-in slide-in-from-bottom duration-500 flex flex-col items-center overflow-hidden">
+    <div 
+      className="fixed inset-0 z-[70] animate-in slide-in-from-bottom duration-500 flex flex-col items-center overflow-hidden"
+      // 🌟 动态背景样式
+      style={{
+        // 使用径向渐变，从上方中间向下扩散，更有氛围感
+        background: `radial-gradient(circle at 50% 0%, ${bgColor} 0%, #000000 100%)`,
+        // 添加过渡动画，切歌时颜色会丝滑渐变，不会闪烁
+        transition: 'background 1s ease-in-out' 
+      }}
+    >
       
       {/* 关闭按钮 */}
       <button 
         onClick={() => setShowLyrics(false)} 
-        className="absolute top-6 left-6 md:top-8 md:left-8 text-neutral-400 hover:text-white transition z-20 p-2 bg-black/20 rounded-full backdrop-blur-md"
+        className="absolute top-6 left-6 md:top-8 md:left-8 text-white/50 hover:text-white transition z-20 p-2 bg-black/20 rounded-full backdrop-blur-md border border-white/5"
       >
         <ChevronDown size={32} />
       </button>
@@ -1491,25 +1542,30 @@ const LyricsPage = () => {
         <div className="w-full md:w-1/2 flex flex-col items-center gap-6 md:gap-8 shrink-0">
           {/* 封面图 */}
           <div className="relative group">
+            {/* 封面背后的光晕：使用提取的颜色做发光效果 */}
+            <div 
+              className="absolute -inset-4 rounded-full blur-3xl opacity-40 animate-pulse"
+              style={{ backgroundColor: bgColor }}
+            ></div>
+
             <img 
               src={currentSong.cover} 
               // 手机 w-48, 电脑 w-96
-              className={`w-48 h-48 md:w-96 md:h-96 rounded-xl shadow-2xl transition-transform duration-1000 border border-white/5 object-cover ${isPlaying ? 'scale-105 shadow-green-500/10' : 'scale-100'}`} 
+              className={`relative z-10 w-48 h-48 md:w-96 md:h-96 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-transform duration-1000 border border-white/10 object-cover ${isPlaying ? 'scale-105' : 'scale-100'}`} 
               alt="cover" 
             />
           </div>
 
           {/* 标题与爱心 */}
-          <div className="flex items-center justify-between w-full max-w-xs md:max-w-sm">
+          <div className="flex items-center justify-between w-full max-w-xs md:max-w-sm relative z-10">
             <div className="flex-1 min-w-0 text-center md:text-left">
-              {/* 手机 text-2xl, 电脑 text-3xl */}
-              <h2 className="text-2xl md:text-3xl font-bold text-white truncate px-2">{currentSong.title}</h2>
-              <p className="text-lg md:text-xl text-neutral-400 truncate px-2">{currentSong.artist}</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-white truncate px-2 drop-shadow-md">{currentSong.title}</h2>
+              <p className="text-lg md:text-xl text-white/60 truncate px-2">{currentSong.artist}</p>
             </div>
             
             <Heart 
               size={28} 
-              className={`cursor-pointer transition-all active:scale-125 flex-shrink-0 ${likedSongs.has(currentSong.id) ? 'text-green-500' : 'text-neutral-500 hover:text-white'}`}
+              className={`cursor-pointer transition-all active:scale-125 flex-shrink-0 drop-shadow-md ${likedSongs.has(currentSong.id) ? 'text-green-500' : 'text-white/40 hover:text-white'}`}
               fill={likedSongs.has(currentSong.id) ? "currentColor" : "none"}
               onClick={() => toggleLike(currentSong.id)}
             />
@@ -1517,25 +1573,22 @@ const LyricsPage = () => {
         </div>
         
         {/* --- 右侧/下方：滚动歌词 --- */}
-        {/* 手机 h-full (占满剩余空间), 电脑固定高度 */}
-        <div className="w-full md:w-1/2 flex flex-col items-center md:items-start h-full overflow-y-auto no-scrollbar scroll-smooth relative mask-image-linear">
+        <div className="w-full md:w-1/2 flex flex-col items-center md:items-start h-full overflow-y-auto no-scrollbar scroll-smooth relative mask-image-linear z-10">
           
-          {/* 歌词列表容器 */}
-          <div className="space-y-6 md:space-y-8 pb-32 md:pb-40 pt-4 md:pt-20 text-center md:text-left w-full px-4">
+          <div className="space-y-6 md:space-y-10 pb-32 md:pb-40 pt-4 md:pt-20 text-center md:text-left w-full px-4">
             {currentSong.lyrics?.map((line, idx) => (
               <p 
                 key={idx} 
                 ref={idx === activeLyricIndex ? activeLyricRef : null}
-                // 手机 text-xl, 电脑 text-4xl
                 className={`transition-all duration-500 font-bold cursor-default origin-center md:origin-left ${
                   idx === activeLyricIndex 
-                    ? 'text-white scale-110 md:scale-105 text-xl md:text-4xl' 
-                    : 'text-neutral-600 hover:text-neutral-400 scale-100 text-lg md:text-3xl'
+                    ? 'text-white scale-110 md:scale-105 text-xl md:text-4xl drop-shadow-lg' 
+                    : 'text-white/30 hover:text-white/50 scale-100 text-lg md:text-3xl blur-[0.5px]'
                 }`}
               >
                 {line.text}
               </p>
-            )) || <p className="text-neutral-600 mt-20">纯音乐 / 暂无歌词</p>}
+            )) || <p className="text-white/40 mt-20 text-xl">纯音乐 / 暂无歌词</p>}
           </div>
         </div>
 
@@ -1543,7 +1596,6 @@ const LyricsPage = () => {
     </div>
   );
 };
-
 // [新增] 移动端底部导航栏
 const MobileNav = () => {
   const { activeTab, setActiveTab, themeColor } = useContext(PlayerContext);
