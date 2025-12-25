@@ -49,31 +49,7 @@ const GlobalStyles = () => (
   `}</style>
 );
 
-const AmbientBackground = () => {
-  const { themeColor } = useContext(PlayerContext);
-  
-  return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-      {/* 噪点层 (增加质感) */}
-      <div className="absolute inset-0 bg-noise opacity-30 z-10 mix-blend-overlay"></div>
-      
-      {/* 主色光斑 */}
-      <div 
-        className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full blur-[120px] opacity-20 animate-[float-slow_20s_ease-in-out_infinite]"
-        style={{ backgroundColor: themeColor }}
-      ></div>
-      
-      {/* 辅色光斑 (对角线) */}
-      <div 
-        className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] rounded-full blur-[150px] opacity-10 animate-[float-slow_25s_ease-in-out_infinite_reverse]"
-        style={{ backgroundColor: themeColor }}
-      ></div>
-      
-      {/* 提亮光斑 */}
-      <div className="absolute top-[40%] left-[50%] -translate-x-1/2 w-[30vw] h-[30vw] rounded-full bg-white blur-[100px] opacity-5 animate-pulse"></div>
-    </div>
-  );
-};
+
 
 // --- 工具函数：解析 LRC 歌词 ---
 const parseLRC = (lrcText) => {
@@ -2661,7 +2637,52 @@ const LyricsOverlay = () => {
 };
 
 
-
+const AmbientBackground = () => {
+  const { themeColor } = useContext(PlayerContext);
+  
+  return (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+      {/* 噪点纹理层 (增加胶片质感) */}
+      <div 
+        className="absolute inset-0 opacity-[0.03] z-10 mix-blend-overlay"
+        style={{ 
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E")` 
+        }}
+      ></div>
+      
+      {/* 动画样式定义 (如果在 GlobalStyles 没加，这里补一个内联 style 确保生效) */}
+      <style>{`
+        @keyframes float-slow {
+          0% { transform: translate(0, 0) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+          100% { transform: translate(0, 0) scale(1); }
+        }
+        @keyframes float-reverse {
+          0% { transform: translate(0, 0) scale(1); }
+          33% { transform: translate(-30px, 50px) scale(0.9); }
+          66% { transform: translate(20px, -20px) scale(1.1); }
+          100% { transform: translate(0, 0) scale(1); }
+        }
+      `}</style>
+      
+      {/* 主色光斑 (左上) */}
+      <div 
+        className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] rounded-full blur-[100px] opacity-20 animate-[float-slow_20s_ease-in-out_infinite]"
+        style={{ backgroundColor: themeColor }}
+      ></div>
+      
+      {/* 辅色光斑 (右下 - 稍暗) */}
+      <div 
+        className="absolute bottom-[-10%] right-[-10%] w-[70vw] h-[70vw] rounded-full blur-[120px] opacity-15 animate-[float-reverse_25s_ease-in-out_infinite]"
+        style={{ backgroundColor: themeColor }}
+      ></div>
+      
+      {/* 顶部高光 (增加通透感) */}
+      <div className="absolute top-[20%] left-[50%] -translate-x-1/2 w-[40vw] h-[40vw] rounded-full bg-white blur-[120px] opacity-[0.03] pointer-events-none"></div>
+    </div>
+  );
+};
 
 
 // --- 主应用组件 ---
