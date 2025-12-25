@@ -1600,23 +1600,20 @@ const PlayerBar = () => {
   if (!currentSong) return null;
 
   return (
-    // 🌟 修改点 1: 容器定位
-    // 手机端：bottom-[64px] (留出底部导航栏高度)，圆角，悬浮感
-    // 桌面端：bottom-0，直角，通栏
     <div 
       className="fixed bottom-[64px] md:bottom-0 left-2 right-2 md:left-0 md:right-0 h-14 md:h-24 px-4 md:px-6 flex items-center justify-between z-50 transition-all duration-500 rounded-xl md:rounded-none overflow-hidden md:overflow-visible"
       style={{
-        background: `linear-gradient(to right, ${themeColor}22 0%, #1a1a1ae6 100%)`, // 手机端稍微深一点的背景
+        background: `linear-gradient(to right, ${themeColor}22 0%, #1a1a1ae6 100%)`,
         backdropFilter: 'blur(20px)',
         border: '1px solid rgba(255,255,255,0.05)',
         boxShadow: '0 4px 30px rgba(0, 0, 0, 0.3)'
       }}
-      // 点击整个条打开歌词页（仅限手机，防止误触）
+      // 手机端点击整体打开歌词页
       onClick={(e) => {
         if (window.innerWidth < 768) setShowLyrics(true);
       }}
     >
-      {/* 🌟 手机端进度条 (放在顶部极细的一条) */}
+      {/* 手机端顶部极细进度条 */}
       <div className="absolute top-0 left-0 h-[2px] bg-white/10 w-full md:hidden">
          <div 
            className="h-full transition-all duration-300" 
@@ -1625,7 +1622,6 @@ const PlayerBar = () => {
       </div>
 
       {/* --- 左侧：歌曲信息 --- */}
-      {/* 手机端：占据主要空间，点击穿透 */}
       <div className="flex items-center gap-3 md:gap-4 flex-1 md:w-1/3 min-w-0">
         <div 
            className="relative flex-shrink-0 cursor-pointer transition hover:scale-110 active:scale-95" 
@@ -1634,24 +1630,34 @@ const PlayerBar = () => {
           <img 
             src={currentSong.cover} 
             className="w-10 h-10 md:w-14 md:h-14 rounded-md md:rounded-lg shadow-2xl object-cover border border-white/10 animate-[spin_10s_linear_infinite] md:animate-none" 
-            style={{ animationPlayState: isPlaying ? 'running' : 'paused' }} // 手机端加个转盘特效
+            style={{ animationPlayState: isPlaying ? 'running' : 'paused' }} 
             alt="thumb" 
           />
         </div>
         
         <div className="overflow-hidden flex-1">
+          {/* 歌名：点击打开歌词 */}
           <div 
-            className="text-white text-sm font-bold truncate cursor-pointer"
+            className="text-white text-sm font-bold truncate cursor-pointer hover:underline"
             style={{ color: isPlaying ? 'white' : '#ffffffcc' }}
+            onClick={(e) => { e.stopPropagation(); setShowLyrics(true); }}
           >
             {currentSong.title}
           </div>
-          <div className="text-white/60 text-xs truncate">
+          
+          {/* 🌟 优化点 1：艺人名跳转 */}
+          <div 
+            className="text-white/60 text-xs truncate cursor-pointer hover:text-white hover:underline transition-colors w-fit"
+            onClick={(e) => {
+              e.stopPropagation(); // 阻止冒泡，防止触发手机端打开歌词页
+              goToArtist(currentSong.artist);
+            }}
+          >
             {currentSong.artist}
           </div>
         </div>
 
-        {/* 手机端：爱心放这里 */}
+        {/* 手机端爱心 */}
         <Heart 
           size={20} 
           className={`md:hidden flex-shrink-0 active:scale-125 transition-transform ${likedSongs.has(currentSong.id) ? '' : 'text-white/40'}`}
@@ -1662,7 +1668,6 @@ const PlayerBar = () => {
       </div>
 
       {/* --- 中间：播放控制 --- */}
-      {/* 手机端：只保留 播放/暂停 按钮 */}
       <div className="flex flex-col items-center md:w-1/3 gap-3 z-10 flex-shrink-0 ml-2 md:ml-0">
         <div className="flex items-center gap-4 md:gap-8 text-neutral-400">
           
@@ -1670,23 +1675,37 @@ const PlayerBar = () => {
           <Shuffle size={18} className="hidden md:block cursor-pointer hover:text-white transition-colors" />
           <SkipBack size={24} className="hidden md:block cursor-pointer hover:text-white transition-colors active:scale-75" onClick={prevSong} />
           
-          {/* 播放/暂停 (手机/桌面通用，但样式略有不同) */}
+          {/* 播放/暂停 */}
           <button 
             onClick={(e) => { e.stopPropagation(); togglePlay(); }}
             className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center bg-white text-black hover:scale-110 transition shadow-lg active:scale-90"
           >
             {isPlaying ? (
-              <Pause size={18} md:size={22} fill="black" />
+              <Pause size={18} className="md:w-[22px] md:h-[22px]" fill="black" />
             ) : (
-              <Play size={18} md:size={22} fill="black" className="ml-0.5" />
+              <Play size={18} className="ml-0.5 md:w-[22px] md:h-[22px]" fill="black" />
             )}
           </button>
           
           {/* 桌面端控件 */}
           <SkipForward size={24} className="hidden md:block cursor-pointer hover:text-white transition-colors active:scale-75" onClick={() => nextSong(false)} />
-          <button onClick={toggleRepeat} className="hidden md:block relative">
-             <Repeat size={20} style={{ color: repeatMode !== 'off' ? themeColor : '' }} />
+          
+          {/* 🌟 优化点 2：循环按钮交互优化 */}
+          <button 
+            onClick={toggleRepeat} 
+            className={`hidden md:flex relative items-center justify-center w-8 h-8 rounded-full transition-all active:scale-90 ${repeatMode !== 'off' ? '' : 'hover:bg-white/10 hover:text-white'}`}
+            style={{ color: repeatMode !== 'off' ? themeColor : '' }}
+            title={repeatMode === 'one' ? '单曲循环' : repeatMode === 'all' ? '列表循环' : '不循环'}
+          >
+             {/* 根据模式切换图标: 单曲显示 Repeat1，列表显示 Repeat */}
+             {repeatMode === 'one' ? <Repeat1 size={20} /> : <Repeat size={20} />}
+             
+             {/* 激活状态下显示底部小圆点 */}
+             {repeatMode !== 'off' && (
+               <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-current shadow-[0_0_5px_currentColor]" />
+             )}
           </button>
+
         </div>
         
         {/* 桌面端进度条 */}
@@ -1710,10 +1729,10 @@ const PlayerBar = () => {
           fill={likedSongs.has(currentSong.id) ? themeColor : "none"}
           style={{ color: likedSongs.has(currentSong.id) ? themeColor : '' }}
           onClick={() => toggleLike(currentSong.id)}
-          className="cursor-pointer active:scale-125 transition-transform"
+          className="cursor-pointer active:scale-125 transition-transform hover:text-white"
         />
-        <Maximize2 size={18} className="hover:text-white cursor-pointer" onClick={() => setShowLyrics(true)} />
-        <div className="flex items-center gap-3 bg-white/5 px-3 py-2 rounded-full">
+        <Maximize2 size={18} className="hover:text-white cursor-pointer hover:scale-110 transition" onClick={() => setShowLyrics(true)} />
+        <div className="flex items-center gap-3 bg-white/5 px-3 py-2 rounded-full border border-white/5 hover:bg-white/10 transition">
           <Volume2 size={18} />
           <input 
             type="range" min="0" max="1" step="0.01" value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} 
