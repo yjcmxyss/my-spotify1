@@ -1457,11 +1457,6 @@ const LyricsPage = () => {
   const { currentSong, progress, setShowLyrics, isPlaying, likedSongs, toggleLike } = useContext(PlayerContext);
   const activeLyricRef = useRef(null);
 
-  // 🌟 存储背景样式字符串
-  const [gradientStyle, setGradientStyle] = useState({
-    background: 'linear-gradient(135deg, rgb(20,20,20), rgb(0,0,0))'
-  });
-
   // 计算当前歌词索引
   const activeLyricIndex = currentSong.lyrics?.findIndex((l, i) => {
     const next = currentSong.lyrics[i + 1];
@@ -1478,72 +1473,22 @@ const LyricsPage = () => {
     }
   }, [activeLyricIndex]);
 
-  // 🌟 核心：提取多种颜色并生成流体渐变
-  useEffect(() => {
-    if (!currentSong?.cover) return;
-
-    const img = new Image();
-    img.crossOrigin = "Anonymous";
-    img.src = currentSong.cover;
-
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        // 1. 将图片压缩为 5x5 的网格，以便取样
-        const size = 5;
-        canvas.width = size;
-        canvas.height = size;
-        ctx.drawImage(img, 0, 0, size, size);
-        
-        const data = ctx.getImageData(0, 0, size, size).data;
-        const colors = [];
-
-        // 2. 辅助函数：处理颜色 (变暗处理)
-        const getDarkColor = (index) => {
-          const i = index * 4;
-          // 乘以 0.5 确保背景足够深，突出白色歌词
-          return `rgb(${Math.floor(data[i] * 0.5)}, ${Math.floor(data[i+1] * 0.5)}, ${Math.floor(data[i+2] * 0.5)})`;
-        };
-
-        // 3. 提取三个关键位置的颜色
-        // 索引 0: 左上角
-        // 索引 12: 正中间 (5x5网格的第13个格子)
-        // 索引 24: 右下角
-        const color1 = getDarkColor(0);  
-        const color2 = getDarkColor(12); 
-        const color3 = getDarkColor(24);
-
-        // 4. 构建 CSS 渐变样式
-        setGradientStyle({
-          background: `linear-gradient(135deg, ${color1}, ${color2}, ${color3}, ${color1})`,
-          backgroundSize: '400% 400%', // 放大背景以实现流动效果
-          animation: 'gradientMove 15s ease infinite' // 启用动画
-        });
-
-      } catch (e) {
-        console.warn("颜色提取失败", e);
-        // 回退样式
-        setGradientStyle({ background: 'linear-gradient(to bottom, #1a1a1a, #000000)' });
-      }
-    };
-
-    img.onerror = () => {
-      setGradientStyle({ background: 'linear-gradient(to bottom, #1a1a1a, #000000)' });
-    };
-
-  }, [currentSong.cover]);
-
   return (
-    <div className="fixed inset-0 z-[70] animate-in slide-in-from-bottom duration-500 flex flex-col items-center overflow-hidden">
+    <div className="fixed inset-0 z-[70] animate-in slide-in-from-bottom duration-500 flex flex-col items-center overflow-hidden bg-black">
       
-      {/* 🌟 1. 注入 CSS 动画关键帧 */}
+      {/* 🌟 1. 定义背景动画关键帧 */}
       <style>{`
-        @keyframes gradientMove {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
+        @keyframes blobBounce {
+          0% { transform: scale(1.2) translate(0, 0); }
+          25% { transform: scale(1.3) translate(2%, 2%); }
+          50% { transform: scale(1.2) translate(0, 4%); }
+          75% { transform: scale(1.3) translate(-2%, 2%); }
+          100% { transform: scale(1.2) translate(0, 0); }
+        }
+        @keyframes slowSpin {
+          0% { transform: rotate(0deg) scale(1.5); }
+          50% { transform: rotate(180deg) scale(1.8); }
+          100% { transform: rotate(360deg) scale(1.5); }
         }
         .mask-image-linear {
            mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
@@ -1551,18 +1496,36 @@ const LyricsPage = () => {
         }
       `}</style>
 
-      {/* 🌟 2. 动态背景层 */}
-      <div 
-        className="absolute inset-0 -z-10 transition-all duration-1000 ease-in-out"
-        style={gradientStyle}
-      />
-      {/* 叠加一层黑色遮罩，确保底部更深 */}
-      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-transparent via-black/20 to-black/80 pointer-events-none" />
+      {/* 🌟 2. 动态背景层 (两层叠加，营造深度) */}
+      
+      {/* 背景层 1: 大范围模糊，顺时针缓慢旋转 */}
+      <div className="absolute inset-0 -z-20 overflow-hidden pointer-events-none">
+        <img 
+          src={currentSong.cover} 
+          className="w-full h-full object-cover blur-[80px] opacity-60 scale-150 animate-[slowSpin_40s_linear_infinite]"
+          alt=""
+        />
+      </div>
+
+      {/* 背景层 2: 另一层模糊，反向或不同步运动，增加层次感 */}
+      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none mix-blend-overlay">
+        <img 
+          src={currentSong.cover} 
+          className="w-full h-full object-cover blur-[100px] opacity-40 scale-150 animate-[blobBounce_20s_ease-in-out_infinite]"
+          alt=""
+        />
+      </div>
+
+      {/* 🌟 3. 黑色遮罩层 (确保文字可读性) */}
+      <div className="absolute inset-0 -z-5 bg-black/40 backdrop-blur-[2px]" />
+      <div className="absolute inset-0 -z-5 bg-gradient-to-b from-black/30 via-transparent to-black/80" />
+
+      {/* --- 以下为 UI 内容 (保持不变) --- */}
 
       {/* 关闭按钮 */}
       <button 
         onClick={() => setShowLyrics(false)} 
-        className="absolute top-6 left-6 md:top-8 md:left-8 text-white/50 hover:text-white transition z-20 p-2 bg-black/20 rounded-full backdrop-blur-md border border-white/5"
+        className="absolute top-6 left-6 md:top-8 md:left-8 text-white/60 hover:text-white transition z-20 p-2 bg-white/5 rounded-full backdrop-blur-md border border-white/5 hover:bg-white/10"
       >
         <ChevronDown size={32} />
       </button>
@@ -1573,16 +1536,10 @@ const LyricsPage = () => {
         {/* --- 左侧/上方：封面与歌曲信息 --- */}
         <div className="w-full md:w-1/2 flex flex-col items-center gap-6 md:gap-8 shrink-0">
           <div className="relative group">
-            {/* 封面背后的同色光晕 */}
-            <div 
-              className="absolute -inset-1 rounded-full blur-2xl opacity-30 animate-pulse transition-colors duration-1000"
-              style={{ background: gradientStyle.background }}
-            ></div>
-
             <img 
               src={currentSong.cover} 
               // 手机 w-48, 电脑 w-96
-              className={`relative z-10 w-48 h-48 md:w-96 md:h-96 rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] transition-transform duration-1000 border border-white/10 object-cover ${isPlaying ? 'scale-105' : 'scale-100'}`} 
+              className={`relative z-10 w-48 h-48 md:w-96 md:h-96 rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.5)] transition-transform duration-1000 border border-white/10 object-cover ${isPlaying ? 'scale-105' : 'scale-100'}`} 
               alt="cover" 
             />
           </div>
@@ -1590,7 +1547,7 @@ const LyricsPage = () => {
           <div className="flex items-center justify-between w-full max-w-xs md:max-w-sm relative z-10">
             <div className="flex-1 min-w-0 text-center md:text-left">
               <h2 className="text-2xl md:text-3xl font-bold text-white truncate px-2 drop-shadow-md">{currentSong.title}</h2>
-              <p className="text-lg md:text-xl text-white/60 truncate px-2">{currentSong.artist}</p>
+              <p className="text-lg md:text-xl text-white/70 truncate px-2 font-medium">{currentSong.artist}</p>
             </div>
             
             <Heart 
@@ -1603,7 +1560,6 @@ const LyricsPage = () => {
         </div>
         
         {/* --- 右侧/下方：滚动歌词 --- */}
-        {/* 添加了 mask-image 类来实现上下边缘淡出效果 */}
         <div className="w-full md:w-1/2 flex flex-col items-center md:items-start h-full overflow-y-auto no-scrollbar scroll-smooth relative z-10 mask-image-linear">
           <div className="space-y-6 md:space-y-10 pb-32 md:pb-40 pt-20 md:pt-40 text-center md:text-left w-full px-4">
             {currentSong.lyrics?.map((line, idx) => (
