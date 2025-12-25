@@ -2713,13 +2713,10 @@ const HomePage = () => {
   }, [allSongs]);
 
   // 公用的全屏亮色背景样式
-  const fullScreenBrightStyle = {
-    background: `
-      radial-gradient(circle at 0% 0%, ${themeColor}AA 0%, transparent 70%),
-      radial-gradient(circle at 100% 0%, ${themeColor}66 0%, transparent 50%)
-    `,
-    transition: 'background 1s ease-in-out',
-  };
+const fullScreenBrightStyle = {
+  background: 'transparent', // 彻底透明，不挡住底层的流光
+  // transition: 'background 1s ease-in-out', // 既然没有背景了，动画也不需要了
+};
 
   // --- 渲染优先级判断 ---
 
