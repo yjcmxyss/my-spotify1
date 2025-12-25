@@ -1457,13 +1457,9 @@ const LyricsPage = () => {
   const { currentSong, progress, setShowLyrics, isPlaying, likedSongs, toggleLike } = useContext(PlayerContext);
   const activeLyricRef = useRef(null);
 
-  // 🌟 存储提取到的 3 种关键颜色
-  const [colors, setColors] = useState({
-    bg: '#1a1a1a',      // 背景底色
-    c1: '#4a4a4a',      // 颜色球 1
-    c2: '#2a2a2a',      // 颜色球 2
-    c3: '#000000'       // 颜色球 3
-  });
+  // 🌟 存储 5 种关键颜色
+  const [colors, setColors] = useState(['#444', '#333', '#222', '#111', '#000']);
+  const [bgColor, setBgColor] = useState('#121212'); // 兜底背景色
 
   const activeLyricIndex = currentSong.lyrics?.findIndex((l, i) => {
     const next = currentSong.lyrics[i + 1];
@@ -1476,7 +1472,7 @@ const LyricsPage = () => {
     }
   }, [activeLyricIndex]);
 
-  // 🌟 核心：提取 3 种关键色
+  // 🌟 核心：提取 5 个区域的颜色
   useEffect(() => {
     if (!currentSong?.cover) return;
     const img = new Image();
@@ -1488,7 +1484,7 @@ const LyricsPage = () => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         
-        // 压缩到 10x10 以便取样
+        // 压缩到 10x10 取样
         canvas.width = 10;
         canvas.height = 10;
         ctx.drawImage(img, 0, 0, 10, 10);
@@ -1496,16 +1492,20 @@ const LyricsPage = () => {
 
         const getRGB = (x, y) => {
           const i = (y * 10 + x) * 4;
-          // 稍微提高一点亮度，确保颜色鲜艳
           return `rgb(${data[i]}, ${data[i+1]}, ${data[i+2]})`;
         };
 
-        setColors({
-          bg: getRGB(5, 5),   // 中心色作为底色
-          c1: getRGB(2, 2),   // 左上角颜色
-          c2: getRGB(8, 8),   // 右下角颜色
-          c3: getRGB(8, 2)    // 右上角颜色
-        });
+        // 提取 5 个关键点：四角 + 中心
+        const newColors = [
+          getRGB(0, 0),  // 左上
+          getRGB(9, 0),  // 右上
+          getRGB(0, 9),  // 左下
+          getRGB(9, 9),  // 右下
+          getRGB(5, 5)   // 中心
+        ];
+        
+        setColors(newColors);
+        setBgColor(getRGB(5, 5)); // 背景底色用中心色
 
       } catch (e) {
         console.warn("颜色提取失败", e);
@@ -1516,84 +1516,99 @@ const LyricsPage = () => {
   return (
     <div 
       className="fixed inset-0 z-[70] animate-in slide-in-from-bottom duration-500 flex flex-col items-center overflow-hidden"
-      style={{ backgroundColor: colors.bg, transition: 'background-color 1s ease' }}
+      style={{ 
+        backgroundColor: bgColor, 
+        transition: 'background-color 1s ease' 
+      }}
     >
-      {/* 🌟 定义流体动画关键帧 */}
       <style>{`
-        @keyframes drift1 {
-          0% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(30%, -20%) scale(1.2); }
-          66% { transform: translate(-20%, 20%) scale(0.8); }
-          100% { transform: translate(0, 0) scale(1); }
-        }
-        @keyframes drift2 {
-          0% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(-30%, 30%) scale(1.2); }
-          66% { transform: translate(20%, -20%) scale(0.8); }
-          100% { transform: translate(0, 0) scale(1); }
-        }
-        @keyframes drift3 {
-          0% { transform: translate(0, 0) scale(1); }
-          50% { transform: translate(20%, 20%) scale(1.1); }
-          100% { transform: translate(0, 0) scale(1); }
-        }
-        .fluid-blob {
+        /* 定义5种不同的漂浮动画 */
+        @keyframes float1 { 0%,100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(30%, 20%) scale(1.2); } }
+        @keyframes float2 { 0%,100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-20%, 30%) scale(1.1); } }
+        @keyframes float3 { 0%,100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(20%, -20%) scale(0.9); } }
+        @keyframes float4 { 0%,100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-30%, -20%) scale(1.3); } }
+        @keyframes float5 { 0%,100% { transform: translate(0, 0) scale(1.2); } 50% { transform: translate(10%, 10%) scale(0.8); } }
+
+        .vibrant-blob {
           position: absolute;
           border-radius: 50%;
-          filter: blur(80px); /* 强力模糊，制造流体感 */
-          opacity: 0.8;
-          mix-blend-mode: screen; /* 混合模式，让颜色叠加变亮 */
+          filter: blur(80px); /* 极致模糊 */
+          opacity: 0.8; 
+          mix-blend-mode: screen; /* 滤色模式，叠加变亮 */
           animation-timing-function: ease-in-out;
           animation-iteration-count: infinite;
+          will-change: transform; /* 性能优化 */
         }
+        
+        /* 🌟 暴力增强层：强制提升所有光球的鲜艳度 */
+        .color-booster {
+           filter: saturate(300%) brightness(120%) contrast(110%);
+        }
+
         .mask-image-linear {
            mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
         }
       `}</style>
 
-      {/* 🌟 动态流体层 (三个独立运动的光球) */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {/* 🌟 动态流体容器 (Color Booster) */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none color-booster">
         
-        {/* Blob 1: 左上，主色调 */}
+        {/* 光球 1: 左上 */}
         <div 
-          className="fluid-blob w-[80vw] h-[80vw] -top-[20%] -left-[20%]"
+          className="vibrant-blob w-[70vw] h-[70vw] -top-[10%] -left-[10%]"
           style={{ 
-            backgroundColor: colors.c1, 
-            animation: 'drift1 15s infinite alternate',
-            transition: 'background-color 1s ease'
+            backgroundColor: colors[0], 
+            animation: 'float1 15s infinite' 
           }}
         />
 
-        {/* Blob 2: 右下，对比色 */}
+        {/* 光球 2: 右上 */}
         <div 
-          className="fluid-blob w-[80vw] h-[80vw] -bottom-[20%] -right-[20%]"
+          className="vibrant-blob w-[80vw] h-[80vw] -top-[20%] -right-[20%]"
           style={{ 
-            backgroundColor: colors.c2, 
-            animation: 'drift2 20s infinite alternate',
-            transition: 'background-color 1s ease'
+            backgroundColor: colors[1], 
+            animation: 'float2 18s infinite reverse' 
           }}
         />
 
-        {/* Blob 3: 游走色，增加丰富度 */}
+        {/* 光球 3: 左下 */}
         <div 
-          className="fluid-blob w-[60vw] h-[60vw] top-[20%] right-[10%]"
+          className="vibrant-blob w-[70vw] h-[70vw] -bottom-[10%] -left-[20%]"
           style={{ 
-            backgroundColor: colors.c3, 
-            animation: 'drift3 18s infinite alternate',
-            transition: 'background-color 1s ease'
+            backgroundColor: colors[2], 
+            animation: 'float3 20s infinite' 
           }}
         />
 
-        {/* 覆盖一层噪点/纹理 (可选，增加质感) */}
-        <div className="absolute inset-0 bg-black/10 backdrop-blur-[60px]" />
+        {/* 光球 4: 右下 */}
+        <div 
+          className="vibrant-blob w-[90vw] h-[90vw] -bottom-[20%] -right-[10%]"
+          style={{ 
+            backgroundColor: colors[3], 
+            animation: 'float4 22s infinite reverse' 
+          }}
+        />
+
+        {/* 光球 5: 中心游走 (增加高光) */}
+        <div 
+          className="vibrant-blob w-[50vw] h-[50vw] top-[25%] left-[25%]"
+          style={{ 
+            backgroundColor: colors[4], 
+            animation: 'float5 25s infinite',
+            opacity: 0.6
+          }}
+        />
       </div>
-      
-      {/* 🌟 变暗遮罩 (保证文字可读) */}
-      <div className="absolute inset-0 bg-black/20" />
+
+      {/* 🌟 遮罩层 (压暗边缘，突出中心文字) */}
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-[100px]" /> 
+      {/* 这里的 backdrop-blur-[100px] 是关键，它把所有光球再次融合，消除任何色块边界 */}
+
+      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60 pointer-events-none" />
 
 
-      {/* --- 以下为 UI 内容 --- */}
+      {/* --- UI 内容 --- */}
 
       <button 
         onClick={() => setShowLyrics(false)} 
@@ -1616,13 +1631,14 @@ const LyricsPage = () => {
 
           <div className="flex items-center justify-between w-full max-w-xs md:max-w-sm relative z-10">
             <div className="flex-1 min-w-0 text-center md:text-left">
-              <h2 className="text-2xl md:text-3xl font-bold text-white truncate px-2 drop-shadow-md shadow-black/20">{currentSong.title}</h2>
-              <p className="text-lg md:text-xl text-white/80 truncate px-2 font-medium drop-shadow-md shadow-black/20">{currentSong.artist}</p>
+              {/* 文字增加深色阴影，防止背景太亮看不清 */}
+              <h2 className="text-2xl md:text-3xl font-bold text-white truncate px-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{currentSong.title}</h2>
+              <p className="text-lg md:text-xl text-white/90 truncate px-2 font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{currentSong.artist}</p>
             </div>
             
             <Heart 
               size={28} 
-              className={`cursor-pointer transition-all active:scale-125 flex-shrink-0 drop-shadow-md ${likedSongs.has(currentSong.id) ? 'text-green-400' : 'text-white/60 hover:text-white'}`}
+              className={`cursor-pointer transition-all active:scale-125 flex-shrink-0 drop-shadow-md ${likedSongs.has(currentSong.id) ? 'text-green-400' : 'text-white/70 hover:text-white'}`}
               fill={likedSongs.has(currentSong.id) ? "currentColor" : "none"}
               onClick={() => toggleLike(currentSong.id)}
             />
@@ -1636,10 +1652,10 @@ const LyricsPage = () => {
               <p 
                 key={idx} 
                 ref={idx === activeLyricIndex ? activeLyricRef : null}
-                className={`transition-all duration-700 font-bold cursor-default origin-center md:origin-left drop-shadow-sm ${
+                className={`transition-all duration-700 font-bold cursor-default origin-center md:origin-left drop-shadow-md ${
                   idx === activeLyricIndex 
                     ? 'text-white scale-110 md:scale-105 text-xl md:text-4xl opacity-100' 
-                    : 'text-white/40 hover:text-white/70 scale-100 text-lg md:text-3xl blur-[0.5px]'
+                    : 'text-white/50 hover:text-white/80 scale-100 text-lg md:text-3xl blur-[0.5px]'
                 }`}
               >
                 {line.text}
