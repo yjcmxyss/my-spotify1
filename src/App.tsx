@@ -108,7 +108,9 @@ export const PlayerProvider = ({ children }) => {
   // 1. 全局状态定义
   // ==============================
 
-  const [themeColor, setThemeColor] = useState('#737373');
+  const [themeColor, setThemeColor] = useState('#5f5f5f');
+
+  const [themeImage, setThemeImage] = useState('');
   
   // 数据源
   const [allSongs, setAllSongs] = useState([]);
@@ -147,12 +149,20 @@ export const PlayerProvider = ({ children }) => {
   // 2. 核心辅助函数
   // ==============================
 
-  const changeThemeColor = (color) => {
-    setThemeColor(color);
-    localStorage.setItem('music_hub_theme', color);
-    document.documentElement.style.setProperty('--primary-color', color);
-    document.documentElement.style.setProperty('--bg-gradient-color', `${color}CC`);
-  };
+const changeThemeColor = (color) => {
+  setThemeColor(color);
+  setThemeImage(''); // ✨ 关键：选颜色时，清除背景图
+  localStorage.setItem('music_hub_theme', color);
+  localStorage.removeItem('music_hub_bg'); // 清除本地存储的图片
+  document.documentElement.style.setProperty('--primary-color', color);
+};
+
+const changeThemeImage = (imgUrl, matchingColor = '#ffffff') => {
+  setThemeImage(imgUrl);
+  setThemeColor(matchingColor); // 同时设置一个匹配的主题色，用于按钮高亮
+  localStorage.setItem('music_hub_bg', imgUrl);
+  localStorage.setItem('music_hub_theme', matchingColor);
+};
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -172,13 +182,20 @@ export const PlayerProvider = ({ children }) => {
   // 3. 数据初始化 (歌曲 & 主题)
   // ==============================
 
+
+  
+
   useEffect(() => {
     // 1. 初始化主题色
     const savedColor = localStorage.getItem('music_hub_theme');
+    const savedBg = localStorage.getItem('music_hub_bg');
     if (savedColor) {
       setThemeColor(savedColor);
       document.documentElement.style.setProperty('--primary-color', savedColor);
     }
+     if (savedBg) {
+    setThemeImage(savedBg); // ✨ 恢复图片
+  }
 
     // 2. 加载公共歌曲数据
     const fetchPublicData = async () => {
@@ -667,6 +684,7 @@ export const PlayerProvider = ({ children }) => {
       allSongs, playlists,
 
       themeColor, changeThemeColor,
+      themeImage, changeThemeImage,
       
       // 播放状态
       currentSong: contextCurrentSong, 
@@ -820,28 +838,53 @@ const Sidebar = () => {
       { name: '红色', value: '#fface1' },
     ];
 
-    return (
-      <div className="mt-4 p-3 bg-white/5 backdrop-blur-md rounded-xl border border-white/10 shadow-lg">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-3">界面配色</p>
-        <div className="flex flex-wrap gap-2">
-          {colors.map(c => (
-            <button
-              key={c.value}
-              
-              onClick={() =>{
-                console.log("切换颜色为:", c.value);
-                changeThemeColor(c.value)}}
-              className={`w-5 h-5 rounded-full border-2 transition-all hover:scale-125 ${
-                themeColor === c.value ? 'border-white scale-110' : 'border-transparent'
-              }`}
-              style={{ backgroundColor: c.value }}
-              title={c.name}
-            />
-          ))}
-        </div>
+      const bgThemes = [
+    { name: '赛博朋克', color: '#00f2ff', url: 'https://images.unsplash.com/photo-1605218427306-022ba8c6c66c?q=80&w=600&auto=format&fit=crop' },
+    { name: '静谧极夜', color: '#7d8aff', url: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=600&auto=format&fit=crop' },
+    { name: '雨夜霓虹', color: '#ff2a6d', url: 'https://images.unsplash.com/photo-1555680202-c86f0e12f086?q=80&w=600&auto=format&fit=crop' },
+    { name: '落日飞车', color: '#ff901f', url: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=600&auto=format&fit=crop' },
+  ]
+
+    r  return (
+    <div className="mt-4 p-4 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl">
+      {/* 1. 纯色选择区 */}
+      <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-3">纯色主题</p>
+      <div className="flex flex-wrap gap-3 mb-6">
+        {colors.map(c => (
+          <button
+            key={c.value}
+            onClick={() => changeThemeColor(c.value)}
+            className={`w-6 h-6 rounded-full border-2 transition-all duration-300 hover:scale-110 shadow-lg ${
+              themeColor === c.value && !themeImage ? 'border-white scale-110 ring-2 ring-white/20' : 'border-transparent opacity-60 hover:opacity-100'
+            }`}
+            style={{ backgroundColor: c.value }}
+            title={c.name}
+          />
+        ))}
       </div>
-    );
-  };
+
+      {/* 2. ✨ 图片选择区 */}
+      <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-3">沉浸背景</p>
+      <div className="grid grid-cols-2 gap-2">
+        {bgThemes.map((bg, idx) => (
+           <div 
+             key={idx}
+             onClick={() => changeThemeImage(bg.url, bg.color)}
+             className={`relative h-12 rounded-lg overflow-hidden cursor-pointer group border-2 transition-all duration-300 ${
+               themeImage === bg.url ? 'border-white ring-2 ring-white/20' : 'border-transparent opacity-70 hover:opacity-100'
+             }`}
+           >
+             <img src={bg.url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={bg.name} />
+             {/* 选中时的遮罩 */}
+             {themeImage === bg.url && <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                <div className="w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_5px_white]"></div>
+             </div>}
+           </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
   return (
     <div 
@@ -2638,48 +2681,62 @@ const LyricsOverlay = () => {
 
 
 const AmbientBackground = () => {
-  const { themeColor } = useContext(PlayerContext);
+  const { themeColor, themeImage } = useContext(PlayerContext);
   
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-      {/* 噪点纹理层 (增加胶片质感) */}
+      {/* 全局噪点层 (保持质感) */}
       <div 
-        className="absolute inset-0 opacity-[0.03] z-10 mix-blend-overlay"
+        className="absolute inset-0 opacity-[0.04] z-20 mix-blend-overlay"
         style={{ 
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E")` 
         }}
       ></div>
-      
-      {/* 动画样式定义 (如果在 GlobalStyles 没加，这里补一个内联 style 确保生效) */}
-      <style>{`
-        @keyframes float-slow {
-          0% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-          100% { transform: translate(0, 0) scale(1); }
-        }
-        @keyframes float-reverse {
-          0% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(-30px, 50px) scale(0.9); }
-          66% { transform: translate(20px, -20px) scale(1.1); }
-          100% { transform: translate(0, 0) scale(1); }
-        }
-      `}</style>
-      
-      {/* 主色光斑 (左上) */}
-      <div 
-        className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] rounded-full blur-[100px] opacity-20 animate-[float-slow_20s_ease-in-out_infinite]"
-        style={{ backgroundColor: themeColor }}
-      ></div>
-      
-      {/* 辅色光斑 (右下 - 稍暗) */}
-      <div 
-        className="absolute bottom-[-10%] right-[-10%] w-[70vw] h-[70vw] rounded-full blur-[120px] opacity-15 animate-[float-reverse_25s_ease-in-out_infinite]"
-        style={{ backgroundColor: themeColor }}
-      ></div>
-      
-      {/* 顶部高光 (增加通透感) */}
-      <div className="absolute top-[20%] left-[50%] -translate-x-1/2 w-[40vw] h-[40vw] rounded-full bg-white blur-[120px] opacity-[0.03] pointer-events-none"></div>
+
+      {/* ✨ 模式 A: 如果有背景图，显示图片 */}
+      {themeImage ? (
+        <>
+          {/* 背景图片层 + 缓慢缩放动画 */}
+          <div className="absolute inset-0 z-0">
+             <img 
+               src={themeImage} 
+               className="w-full h-full object-cover animate-[zoom-slow_60s_linear_infinite]"
+               alt="bg-theme"
+             />
+          </div>
+          {/* 黑色遮罩层 (确保文字可读) */}
+          <div className="absolute inset-0 bg-black/60 z-10 backdrop-blur-[2px]"></div>
+          
+          {/* 注入动画样式 */}
+          <style>{`
+            @keyframes zoom-slow {
+              0% { transform: scale(1); }
+              50% { transform: scale(1.1); }
+              100% { transform: scale(1); }
+            }
+          `}</style>
+        </>
+      ) : (
+        /* ✨ 模式 B: 原来的纯色流光背景 */
+        <>
+           <style>{`
+            @keyframes float-slow {
+              0% { transform: translate(0, 0) scale(1); }
+              33% { transform: translate(30px, -50px) scale(1.1); }
+              66% { transform: translate(-20px, 20px) scale(0.9); }
+              100% { transform: translate(0, 0) scale(1); }
+            }
+          `}</style>
+          <div 
+            className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] rounded-full blur-[100px] opacity-20 animate-[float-slow_20s_ease-in-out_infinite]"
+            style={{ backgroundColor: themeColor }}
+          ></div>
+          <div 
+            className="absolute bottom-[-10%] right-[-10%] w-[70vw] h-[70vw] rounded-full blur-[120px] opacity-15 animate-[float-slow_25s_ease-in-out_infinite_reverse]"
+            style={{ backgroundColor: themeColor }}
+          ></div>
+        </>
+      )}
     </div>
   );
 };
@@ -2765,7 +2822,7 @@ const AppWrapper = () => {
     </div>
   );
 };
-
+ AmbientBackground
 
 // ==========================================
 // 主入口组件 (必须放在最后导出)
