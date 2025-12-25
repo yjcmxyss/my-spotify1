@@ -2292,7 +2292,7 @@ const HomePage = () => {
     background: `
       radial-gradient(circle at 0% 0%, ${themeColor}AA 0%, transparent 70%),
       radial-gradient(circle at 100% 0%, ${themeColor}66 0%, transparent 50%),
-      #0a0a0aff 
+     
     `,
     transition: 'background 1s ease-in-out',
   };
