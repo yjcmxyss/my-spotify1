@@ -1685,7 +1685,7 @@ const PlayerBar = () => {
           // 2. 强模糊：像厚玻璃
           backdropFilter: 'blur(50px) saturate(120%)', 
           // 3. 边缘反光：顶部锐利白线 (inset shadow) + 外部投影
-          boxShadow: 'inset 0 1px 0 0 rgba(255,255,255,0.25), 0 10px 40px -5px rgba(0,0,0,0.6)',
+          boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.07), 0 10px 40px -5px rgba(0,0,0,0.6)',
           // 4. 极细描边
           border: '1px solid rgba(255,255,255,0.05)',
         }}
