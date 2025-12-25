@@ -7,17 +7,73 @@ import {
 } from 'lucide-react';
 
 // --- 全局样式 ---
+// 找到原来的 GlobalStyles 组件，替换或合并以下内容：
 const GlobalStyles = () => (
   <style>{`
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    /* 原有的 shake 动画 */
     @keyframes shake {
       0%, 100% { transform: translateX(0); }
       10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
       20%, 40%, 60%, 80% { transform: translateX(4px); }
     }
+
+    /* --- 新增装饰动画 --- */
+    
+    /* 1. 缓慢漂浮动画 (用于背景光斑) */
+    @keyframes float-slow {
+      0% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -50px) scale(1.1); }
+      66% { transform: translate(-20px, 20px) scale(0.9); }
+      100% { transform: translate(0, 0) scale(1); }
+    }
+
+    /* 2. 音柱跳动动画 */
+    @keyframes equalizer {
+      0% { height: 20%; }
+      50% { height: 100%; }
+      100% { height: 20%; }
+    }
+
+    /* 3. 噪点纹理背景 */
+    .bg-noise {
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+    }
+    
+    /* 4. 霓虹光晕文字 */
+    .text-glow {
+      text-shadow: 0 0 10px currentColor;
+    }
   `}</style>
 );
+
+const AmbientBackground = () => {
+  const { themeColor } = useContext(PlayerContext);
+  
+  return (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+      {/* 噪点层 (增加质感) */}
+      <div className="absolute inset-0 bg-noise opacity-30 z-10 mix-blend-overlay"></div>
+      
+      {/* 主色光斑 */}
+      <div 
+        className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full blur-[120px] opacity-20 animate-[float-slow_20s_ease-in-out_infinite]"
+        style={{ backgroundColor: themeColor }}
+      ></div>
+      
+      {/* 辅色光斑 (对角线) */}
+      <div 
+        className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] rounded-full blur-[150px] opacity-10 animate-[float-slow_25s_ease-in-out_infinite_reverse]"
+        style={{ backgroundColor: themeColor }}
+      ></div>
+      
+      {/* 提亮光斑 */}
+      <div className="absolute top-[40%] left-[50%] -translate-x-1/2 w-[30vw] h-[30vw] rounded-full bg-white blur-[100px] opacity-5 animate-pulse"></div>
+    </div>
+  );
+};
 
 // --- 工具函数：解析 LRC 歌词 ---
 const parseLRC = (lrcText) => {
