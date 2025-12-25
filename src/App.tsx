@@ -2149,7 +2149,7 @@ const AddToPlaylistModal = () => {
 
 const HomePage = () => {
   const { 
-    // 数据源 (从后端获取的)
+    // 数据源
     allSongs, 
     playlists, 
     
@@ -2179,7 +2179,6 @@ const HomePage = () => {
 
   // --- 逻辑：从数据库歌曲中提取推荐艺人 ---
   const recommendedArtists = useMemo(() => {
-    // 如果数据还没加载，返回空
     if (!allSongs || allSongs.length === 0) return [];
 
     const unique = new Set();
@@ -2188,7 +2187,6 @@ const HomePage = () => {
     allSongs.forEach(song => {
       if (!unique.has(song.artist)) {
         unique.add(song.artist);
-        // 优先查找 ARTIST_DATA (如果有定义)，否则用歌曲封面
         const artistCover = ARTIST_DATA[song.artist] || song.cover;
         list.push({ name: song.artist, cover: artistCover });
       }
@@ -2198,10 +2196,8 @@ const HomePage = () => {
     return list.slice(0, 5);
   }, [allSongs]);
 
-
-  // 公用的全屏亮色背景样式 (用于主页和歌单详情)
-const fullScreenBrightStyle = {
-    // 增加颜色透明度到 AA (约 66%)，并将兜底颜色改为略浅的深灰
+  // 公用的全屏亮色背景样式
+  const fullScreenBrightStyle = {
     background: `
       radial-gradient(circle at 0% 0%, ${themeColor}AA 0%, transparent 70%),
       radial-gradient(circle at 100% 0%, ${themeColor}66 0%, transparent 50%),
@@ -2209,83 +2205,81 @@ const fullScreenBrightStyle = {
     `,
     transition: 'background 1s ease-in-out',
   };
+
   // --- 渲染优先级判断 ---
 
-  // 1. 如果选中了艺人，显示艺人主页
-  if (currentArtist) {
-    return <ArtistPage />;
+  if (currentArtist) return <ArtistPage />;
+
+  if (currentPlaylist) {
+    return (
+      <div 
+        className="flex-1 overflow-y-auto p-4 md:p-8 pb-32 no-scrollbar transition-all"
+        style={fullScreenBrightStyle}
+      >
+        <PlaylistDetail playlist={currentPlaylist} />
+      </div>
+    );
   }
 
-  // 2. 如果选中了歌单，显示歌单详情
-if (currentPlaylist) {
-  return (
-    <div 
-      className="flex-1 overflow-y-auto p-8 pb-32 no-scrollbar transition-all "
-      style={fullScreenBrightStyle}// 🌟 使用新的亮色配置
-    >
-      <PlaylistDetail playlist={currentPlaylist} />
-    </div>
-  );
-}
   // 3. 默认主页仪表盘
   return (
-<div 
-      className="flex-1 overflow-y-auto p-8 pb-32 no-scrollbar relative transition-all"
+    <div 
+      // 🌟 修改点：p-4 md:p-8 (手机端边距减小)
+      className="flex-1 overflow-y-auto p-4 md:p-8 pb-32 no-scrollbar relative transition-all"
       style={fullScreenBrightStyle}
     >
       <div 
-      className="absolute top-0 left-0 w-[80%] h-[80%] -z-10 blur-[150px] opacity-50 pointer-events-none transition-colors duration-1000 rounded-full"
-      style={{ backgroundColor: themeColor }}
-    ></div>
+        className="absolute top-0 left-0 w-[80%] h-[80%] -z-10 blur-[150px] opacity-50 pointer-events-none transition-colors duration-1000 rounded-full"
+        style={{ backgroundColor: themeColor }}
+      ></div>
 
-      {/* 顶部 Header：集成 Auth */}
-      <header className="flex justify-between items-center mb-8 sticky top-0 z-10 py-4 -my-4 bg-neutral-900/0 backdrop-blur-sm transition-colors">
-        <div className="flex gap-2">
+      {/* 顶部 Header */}
+      <header className="flex justify-between items-center mb-6 md:mb-8 sticky top-0 z-10 py-4 -my-4 bg-neutral-900/0 backdrop-blur-sm transition-colors">
+        {/* 🌟 修改点：hidden md:flex (手机端隐藏历史记录按钮) */}
+        <div className="hidden md:flex gap-2">
           <div className="w-8 h-8 bg-black/40 rounded-full flex items-center justify-center text-white cursor-pointer hover:bg-black/60 transition">{'<'}</div>
           <div className="w-8 h-8 bg-black/40 rounded-full flex items-center justify-center text-white cursor-pointer hover:bg-black/60 transition">{'>'}</div>
         </div>
         
-        {/* 用户区域 */}
-        <div className="flex items-center gap-4">
+        {/* 用户区域 (手机端自动靠右) */}
+        <div className="flex items-center gap-4 ml-auto md:ml-0">
           {user ? (
-            <div className="flex items-center gap-3 bg-black/40 rounded-full p-1 pr-4 hover:bg-neutral-800 transition cursor-pointer group relative">
-              {/* 🌟 用户头像背景色同步 */}
+            <div className="flex items-center gap-3 bg-black/40 rounded-full p-1 pr-4 hover:bg-neutral-800 transition cursor-pointer group relative border border-white/5">
+              {/* 用户头像 */}
               <div 
                 className="w-8 h-8 rounded-full flex items-center justify-center text-black font-bold text-xs shadow-lg transition-colors duration-500"
                 style={{ backgroundColor: themeColor }}
               >
                 {user.username[0].toUpperCase()}
               </div>
-              <span className="text-white font-bold text-sm">{user.username}</span>
+              <span className="text-white font-bold text-sm max-w-[100px] truncate">{user.username}</span>
               
-              {/* --- 下拉退出菜单 (已修复点击问题) --- */}
-              {/* 使用 pt-2 代替 mt-2 消除间隙，z-50 防止遮挡 */}
+              {/* 下拉退出菜单 */}
               <div className="absolute top-full right-0 w-32 pt-2 z-50 hidden group-hover:block">
                 <div className="bg-neutral-800 rounded-md shadow-xl border border-white/10 overflow-hidden">
                   <button 
                     onClick={(e) => {
-                      e.stopPropagation(); // 阻止冒泡
+                      e.stopPropagation(); 
                       logout();
                     }}
-                    className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-white/10 hover:text-red-300 font-bold transition-colors"
+                    className="w-full text-left px-4 py-3 md:py-2 text-sm text-red-400 hover:bg-white/10 hover:text-red-300 font-bold transition-colors"
                   >
                     退出登录
                   </button>
                 </div>
               </div>
-
             </div>
           ) : (
-            <div className="flex gap-4">
+            <div className="flex gap-2 md:gap-4">
               <button 
                 onClick={() => setShowAuthModal(true)}
-                className="text-neutral-400 font-bold hover:text-white transition"
+                className="text-neutral-400 font-bold hover:text-white transition px-2 py-1"
               >
                 注册
               </button>
               <button 
                 onClick={() => setShowAuthModal(true)}
-                className="bg-white text-black px-6 py-2 rounded-full font-bold hover:scale-105 transition"
+                className="bg-white text-black px-4 md:px-6 py-2 rounded-full font-bold hover:scale-105 transition text-sm md:text-base"
               >
                 登录
               </button>
@@ -2294,54 +2288,54 @@ if (currentPlaylist) {
         </div>
       </header>
 
-      {/* 歌单板块：使用数据库 playlists */}
-      <section className="mb-10">
-       <h2 className="text-3xl font-bold mb-6 text-white tracking-tight">今日推荐</h2>
-       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* 歌单板块 */}
+      <section className="mb-8 md:mb-10">
+       <h2 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6 text-white tracking-tight">今日推荐</h2>
+       {/* 🌟 修改点：grid-cols-2 lg:grid-cols-4 gap-4 (手机双列，间距缩小) */}
+       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {playlists.map(playlist => (
             <div 
               key={playlist.id} 
               onClick={() => setCurrentPlaylist(playlist)} 
-              // 🌟 卡片改为半透明磨砂感 (bg-white/5)
-              className="bg-white/5 backdrop-blur-md hover:bg-white/10 border border-white/5 p-4 rounded-xl transition duration-300 group cursor-pointer overflow-hidden relative"
+              className="bg-white/5 backdrop-blur-md hover:bg-white/10 border border-white/5 p-3 md:p-4 rounded-xl transition duration-300 group cursor-pointer overflow-hidden relative"
             >
-              <div className="relative mb-4 aspect-square overflow-hidden rounded-lg shadow-lg">
+              <div className="relative mb-3 md:mb-4 aspect-square overflow-hidden rounded-lg shadow-lg">
                 <img src={playlist.cover} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" alt="" />
-                {/* 🌟 播放按钮背景色同步 */}
+                {/* 播放按钮 */}
                 <button 
-                  className="absolute bottom-2 right-2 w-12 h-12 rounded-full flex items-center justify-center shadow-xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300"
+                  className="absolute bottom-2 right-2 w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center shadow-xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300"
                   style={{ backgroundColor: themeColor }}
                 >
-                  <Play fill="black" stroke="none" className="ml-1 text-black" />
+                  <Play fill="black" stroke="none" className="ml-1 text-black w-4 h-4 md:w-5 md:h-5" />
                 </button>
               </div>
-              <h3 className="font-bold mb-1 truncate text-white">{playlist.name}</h3>
-              <p className="text-neutral-500 text-sm line-clamp-2">{playlist.description}</p>
+              <h3 className="font-bold mb-1 truncate text-white text-sm md:text-base">{playlist.name}</h3>
+              <p className="text-neutral-500 text-xs md:text-sm line-clamp-2">{playlist.description}</p>
             </div>
           ))}
           
           {playlists.length === 0 && (
-            <div className="col-span-2 lg:col-span-4 text-neutral-500 text-sm py-4">
-              暂无歌单，尝试点击左侧 "创建播放列表" 新建一个吧。
+            <div className="col-span-2 lg:col-span-4 text-neutral-500 text-sm py-4 text-center border border-dashed border-white/10 rounded-xl">
+              暂无歌单，点击底部的 "+" 创建一个吧。
             </div>
           )}
         </div>
       </section>
 
-      {/* 推荐艺人板块 (动态生成) */}
-      <section className="mb-10">
-        <h2 className="text-2xl font-bold text-white mb-6 tracking-tight">推荐艺人</h2>
-        <div className="flex gap-6 overflow-x-auto pb-4 no-scrollbar">
+      {/* 推荐艺人板块 */}
+      <section className="mb-8 md:mb-10">
+        <h2 className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6 tracking-tight">推荐艺人</h2>
+        {/* 🌟 修改点：min-w-[100px] (手机端卡片变小) */}
+        <div className="flex gap-4 md:gap-6 overflow-x-auto pb-4 no-scrollbar">
           {recommendedArtists.map((artist, idx) => (
             <div 
               key={idx} 
               onClick={() => setCurrentArtist(artist.name)} 
-              className="flex flex-col items-center gap-4 min-w-[140px] p-4 rounded-xl hover:bg-neutral-800/40 transition cursor-pointer group"
+              className="flex flex-col items-center gap-3 md:gap-4 min-w-[100px] md:min-w-[140px] p-2 md:p-4 rounded-xl hover:bg-neutral-800/40 transition cursor-pointer group"
             >
               <div 
-                className="w-32 h-32 rounded-full shadow-lg relative overflow-hidden bg-neutral-800 border-2 transition-all duration-500"
+                className="w-24 h-24 md:w-32 md:h-32 rounded-full shadow-lg relative overflow-hidden bg-neutral-800 border-2 transition-all duration-500"
                 style={{ borderColor: 'transparent' }}
-                // 🌟 悬停时显示主题色边框
                 onMouseEnter={(e) => e.currentTarget.style.borderColor = themeColor}
                 onMouseLeave={(e) => e.currentTarget.style.borderColor = 'transparent'}
               >
@@ -2352,8 +2346,8 @@ if (currentPlaylist) {
                 />
               </div>
               <div className="text-center">
-                <div className="font-bold text-white mb-1 group-hover:underline">{artist.name}</div>
-                <div className="text-xs text-neutral-500 font-medium">艺人</div>
+                <div className="font-bold text-white mb-1 text-sm md:text-base group-hover:underline truncate w-full">{artist.name}</div>
+                <div className="text-[10px] md:text-xs text-neutral-500 font-medium">艺人</div>
               </div>
             </div>
           ))}
@@ -2363,10 +2357,10 @@ if (currentPlaylist) {
         </div>
       </section>
 
-      {/* 歌曲推荐板块 (使用数据库 allSongs) */}
+      {/* 歌曲推荐板块 */}
       <section>
-        <div className="flex justify-between items-end mb-6">
-           <h2 className="text-xl font-bold text-white hover:underline cursor-pointer tracking-tight">为您推荐</h2>
+        <div className="flex justify-between items-end mb-4 md:mb-6">
+           <h2 className="text-xl md:text-xl font-bold text-white hover:underline cursor-pointer tracking-tight">为您推荐</h2>
            <button 
              onClick={() => setActiveTab('search')}
              className="text-xs font-bold text-neutral-500 hover:text-white hover:underline cursor-pointer uppercase tracking-widest transition-colors duration-200"
@@ -2374,46 +2368,48 @@ if (currentPlaylist) {
              全部显示
            </button>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+        {/* 🌟 修改点：grid-cols-2 (手机双列) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
           {(allSongs || []).map(song => {
             const isCurrent = currentSong && currentSong.id === song.id;
             return (
               <div 
                 key={song.id}
-                onClick={() => playSong(song, allSongs)} // 传入 allSongs 作为播放队列
-                className="bg-neutral-900/40 p-4 rounded-lg hover:bg-neutral-800/60 transition group cursor-pointer border border-transparent hover:border-white/5 relative"
+                onClick={() => playSong(song, allSongs)} 
+                className="bg-neutral-900/40 p-3 md:p-4 rounded-lg hover:bg-neutral-800/60 transition group cursor-pointer border border-transparent hover:border-white/5 relative"
               >
-                <div className="relative mb-4">
+                <div className="relative mb-3 md:mb-4">
                   <img src={song.cover} className="w-full aspect-square object-cover rounded shadow-2xl border border-white/5" alt="" />
-                  {/* 🌟 悬浮播放按钮背景色同步 */}
+                  
+                  {/* 悬浮播放按钮 */}
                   <div 
-                    className={`absolute bottom-2 right-2 shadow-xl w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${ (isCurrent && isPlaying) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0'}`}
+                    className={`absolute bottom-2 right-2 shadow-xl w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all duration-300 ${ (isCurrent && isPlaying) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0'}`}
                     style={{ backgroundColor: themeColor }}
                   >
-                    { (isCurrent && isPlaying) ? <Pause fill="black" size={18} className="text-black" /> : <Play fill="black" size={18} className="ml-0.5 text-black" /> }
+                    { (isCurrent && isPlaying) ? <Pause fill="black" size={16} className="text-black" /> : <Play fill="black" size={16} className="ml-0.5 text-black" /> }
                   </div>
                 </div>
 
-                {/* 添加到歌单按钮 (右上角悬浮) */}
-               <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                {/* 添加到歌单按钮 */}
+                {/* 🌟 修改点：opacity-100 md:opacity-0 (手机端始终显示，桌面端Hover显示) */}
+                <div className="absolute top-2 right-2 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
                   <button 
                     onClick={(e) => { e.stopPropagation(); openAddToPlaylistModal(song); }}
-                    className="w-8 h-8 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center text-white transition shadow-lg border border-white/10"
-                    // 🌟 悬停到加号时也变色
+                    className="w-7 h-7 md:w-8 md:h-8 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center text-white transition shadow-lg border border-white/10 active:scale-90"
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = themeColor}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.6)'}
                   >
-                      <ListPlus size={16} />
+                      <ListPlus size={14} className="md:w-4 md:h-4" />
                     </button>
                  </div>
                 
-                <div className="text-white font-bold text-sm mb-1 truncate">{song.title}</div>
+                <div className="text-white font-bold text-xs md:text-sm mb-1 truncate">{song.title}</div>
                 
                 {/* 艺人名跳转 */}
                 <div 
-                  className="text-neutral-500 text-xs truncate hover:text-white hover:underline cursor-pointer w-fit transition-colors"
+                  className="text-neutral-500 text-[10px] md:text-xs truncate hover:text-white hover:underline cursor-pointer w-fit transition-colors"
                   onClick={(e) => {
-                    e.stopPropagation(); // 阻止冒泡
+                    e.stopPropagation(); 
                     goToArtist(song.artist);
                   }}
                 >
