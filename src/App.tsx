@@ -848,7 +848,7 @@ const Sidebar = () => {
       className="w-64 h-screen p-6 pb-28 text-neutral-400 flex flex-col gap-6 hidden md:flex flex-shrink-0 border-r border-white/5 transition-all duration-1000 relative overflow-hidden"
       style={{
         // 🌟 核心：使用半透明背景 + 顶部微弱的主题色晕染
-        background: `linear-gradient(to bottom, ${themeColor}30 0%, 0)`,
+         background: `linear-gradient(to bottom, ${themeColor}10 0%, rgba(0,0,0,0.2) 100%)`, 
         backdropFilter: 'blur(20px)'
       }}
     >
