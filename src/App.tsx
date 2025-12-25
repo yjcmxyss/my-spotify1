@@ -1221,8 +1221,8 @@ const Sidebar = () => {
               className={`w-8 h-4 rounded-full relative transition-colors duration-300 ${showStarParticles ? 'bg-white' : 'bg-neutral-700'}`}
               style={{ backgroundColor: showStarParticles ? themeColor : '' }}
             >
-              <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow-sm transition-all duration-300 ${showStarParticles ? 'left-4.5' : 'left-0.5'}`} />
-            </div>
+               <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow-sm transition-all duration-300 ${showStarParticles ? 'left-[18px]' : 'left-0.5'}`} />
+</div>
           </div>
         </div>
 
@@ -3153,7 +3153,7 @@ const AppWrapper = () => {
       
       {/* ✨ 0. 动态流光背景层 (最底层) */}
       <AmbientBackground />
-       <StarBorderParticles />
+       
        {showStarParticles && <StarBorderParticles />}
        <ClickSparkles />
 
