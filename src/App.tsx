@@ -2325,12 +2325,12 @@ const HomePage = () => {
       ></div>
 
       {/* 顶部 Header */}
-      <header className="flex justify-between items-center mb-6 md:mb-8 sticky top-0 z-10 py-4 -my-4 bg-neutral-900/0 backdrop-blur-sm transition-colors">
+      {/* <header className="flex justify-between items-center mb-6 md:mb-8 sticky top-0 z-10 py-4 -my-4 bg-neutral-900/0 backdrop-blur-sm transition-colors"> */}
         {/* 🌟 修改点：hidden md:flex (手机端隐藏历史记录按钮) */}
-        <div className="hidden md:flex gap-2">
+        {/* <div className="hidden md:flex gap-2">
           <div className="w-8 h-8 bg-black/40 rounded-full flex items-center justify-center text-white cursor-pointer hover:bg-black/60 transition">{'<'}</div>
           <div className="w-8 h-8 bg-black/40 rounded-full flex items-center justify-center text-white cursor-pointer hover:bg-black/60 transition">{'>'}</div>
-        </div>
+        </div> */}
         
         {/* 用户区域 (手机端自动靠右) */}
         <div className="flex items-center gap-4 ml-auto md:ml-0">
