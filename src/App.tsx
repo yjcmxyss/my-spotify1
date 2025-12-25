@@ -813,11 +813,11 @@ const Sidebar = () => {
   const ThemeSelector = () => {
     const colors = [
       { name: 'Spotify绿', value: '#737373' },
-      { name: '紫色', value: '#bd71ff' }, 
-      { name: '天空蓝', value: '#3496ff' },
-      { name: '明亮黄', value: '#27ffe2' },
+      { name: '紫色', value: '#d099ff' }, 
+      { name: '天空蓝', value: '#84bfff' },
+      { name: '明亮黄', value: '#77ffed' },
       { name: '红色', value: '#ff2929' },
-      { name: '红色', value: '#ff87d3' },
+      { name: '红色', value: '#fface1' },
     ];
 
     return (
