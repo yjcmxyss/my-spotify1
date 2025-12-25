@@ -2868,35 +2868,7 @@ const fullScreenBrightStyle = {
       {/* =========================================
           ✨ 艺人板块：氛围感标题 + 光圈头像
          ========================================= */}
-      <section className="mb-10 md:mb-14 relative z-10">
-        <div className="flex items-end justify-between mb-6 md:mb-8 pl-2">
-          <div className="flex flex-col gap-1 relative">
-             {/* 氛围光斑 */}
-             <div 
-               className="absolute -bottom-10 -right-10 w-40 h-40 blur-[80px] opacity-30 pointer-events-none transition-colors duration-1000"
-               style={{ backgroundColor: themeColor }}
-             ></div>
-
-             <span 
-               className="font-serif italic text-sm md:text-base tracking-[0.2em] text-white/60"
-               style={{ color: themeColor }}
-             >
-               Featured Artists
-             </span>
-             <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight drop-shadow-md">
-               推荐艺人
-             </h2>
-          </div>
-          
-          {/* 线条按钮 */}
-          <div className="hidden md:flex items-center gap-2 text-xs font-bold text-white/40 hover:text-white cursor-pointer transition-colors group">
-             <span>VIEW ALL</span>
-             <div className="w-8 h-[1px] bg-white/20 group-hover:bg-white transition-colors"></div>
-          </div>
-        </div>
-        
-        {/* 艺人列表 */}
-   <section className="mb-10 md:mb-14 relative z-10">
+     <section className="mb-10 md:mb-14 relative z-10">
         <div className="flex items-end justify-between mb-4 md:mb-6 pl-2">
           <div className="flex flex-col gap-1 relative">
              {/* 氛围光斑 */}
@@ -2971,6 +2943,11 @@ const fullScreenBrightStyle = {
           )}
         </div>
       </section>
+
+
+
+
+
       {/* 歌曲推荐板块 (保持原样，或可按需微调) */}
       <section>
         <div className="flex justify-between items-end mb-4 md:mb-6 pl-2">
