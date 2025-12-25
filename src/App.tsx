@@ -6,84 +6,83 @@ import {
   ArrowLeft, Clock, BadgeCheck, Mic2, Users, ListPlus, Repeat1, ArrowRight  
 } from 'lucide-react';
 
-// --- 全局样式 & 字体 & 动画 ---
+
 // --- 全局样式 & 字体 & 动画 ---
 const GlobalStyles = () => (
-  <>
-    {/* 引入优雅的衬线字体 Playfair Display */}
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
-    </style>
-    <style>{`
-      .no-scrollbar::-webkit-scrollbar { display: none; }
-      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      
-      /* 少女风专用字体类 */
-      .font-serif-elegant {
-        font-family: 'Playfair Display', serif;
-      }
+  <style>{`
+    /* 1. 引入字体 Playfair Display */
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
 
-      /* 漂浮动画 */
-      @keyframes floatUp {
-        0% { transform: translateY(100vh) scale(0.5) rotate(0deg); opacity: 0; }
-        20% { opacity: 0.8; }
-        80% { opacity: 0.6; }
-        100% { transform: translateY(-20vh) scale(1.2) rotate(360deg); opacity: 0; }
-      }
+    /* 2. 基础滚动条隐藏 */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    /* 3. 少女风专用类 (强制覆盖) */
+    .girlish-theme {
+      font-family: 'Playfair Display', serif !important; /* 🌟 加上 !important 确保生效 */
+    }
+    
+    /* 4. 粒子漂浮动画 */
+    @keyframes floatUp {
+      0% { transform: translateY(100vh) scale(0.5) rotate(0deg); opacity: 0; }
+      20% { opacity: 0.8; }
+      80% { opacity: 0.6; }
+      100% { transform: translateY(-20vh) scale(1.2) rotate(360deg); opacity: 0; }
+    }
 
-      @keyframes twinkle {
-        0%, 100% { opacity: 0.3; transform: scale(0.8); }
-        50% { opacity: 1; transform: scale(1.2); }
-      }
-
-      @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
-        20%, 40%, 60%, 80% { transform: translateX(4px); }
-      }
-    `}</style>
-  </>
+    /* 5. 背景呼吸光晕 */
+    @keyframes breathe {
+      0%, 100% { opacity: 0.3; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.1); }
+    }
+  `}</style>
 );
 
+// [新增] 少女风氛围背景组件
 const SparkleBackground = ({ isActive }) => {
+  // 如果不是少女模式，直接不渲染
   if (!isActive) return null;
 
-  // 生成随机粒子
+  // 生成随机粒子 (使用 useMemo 防止重绘闪烁)
   const particles = useMemo(() => {
-    return Array.from({ length: 20 }).map((_, i) => ({
+    return Array.from({ length: 25 }).map((_, i) => ({
       id: i,
       left: Math.random() * 100 + '%',
-      animationDuration: 10 + Math.random() * 20 + 's',
-      animationDelay: Math.random() * 5 + 's',
-      icon: ['✨', '💖', '🌸', '☁️'][Math.floor(Math.random() * 4)],
-      size: Math.random() * 20 + 10 + 'px'
+      // 随机动画时长 10s ~ 25s
+      duration: 10 + Math.random() * 15 + 's',
+      // 随机延迟
+      delay: Math.random() * 5 + 's',
+      // 随机图标
+      icon: ['✨', '💖', '🌸', '☁️', '🎀'][Math.floor(Math.random() * 5)],
+      // 随机大小
+      size: Math.random() * 20 + 14 + 'px'
     }));
   }, []);
 
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-      {/* 柔和的奶油/粉色光晕背景 */}
-      <div className="absolute top-[-20%] left-[-20%] w-[80vw] h-[80vw] bg-[#FF9EAA] rounded-full mix-blend-screen filter blur-[100px] opacity-20 animate-pulse"></div>
-      <div className="absolute bottom-[-20%] right-[-20%] w-[80vw] h-[80vw] bg-[#FFF0F5] rounded-full mix-blend-screen filter blur-[120px] opacity-10"></div>
+      {/* 1. 背景光晕 (深色背景上的柔和光) */}
+      <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] bg-[#ff7eb3] rounded-full filter blur-[120px] opacity-20 animate-[breathe_8s_ease-in-out_infinite]"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-[#8227ff] rounded-full filter blur-[120px] opacity-15 animate-[breathe_10s_ease-in-out_infinite_reverse]"></div>
 
-      {/* 漂浮粒子 */}
+      {/* 2. 漂浮粒子 */}
       {particles.map(p => (
         <div
           key={p.id}
-          className="absolute bottom-0 text-white/40 drop-shadow-md"
+          className="absolute bottom-[-50px] text-white/60 drop-shadow-[0_0_5px_rgba(255,192,203,0.8)]"
           style={{
             left: p.left,
             fontSize: p.size,
-            animation: `floatUp ${p.animationDuration} linear infinite`,
-            animationDelay: p.animationDelay
+            animation: `floatUp ${p.duration} linear infinite`,
+            animationDelay: p.delay
           }}
         >
           {p.icon}
         </div>
       ))}
       
-      {/* 噪点纹理，增加胶片感 */}
-      <div className="absolute inset-0 bg-white/5 opacity-50 mix-blend-overlay" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22 opacity=%221%22/%3E%3C/svg%3E")' }}></div>
+      {/* 3. 噪点纹理 (增加质感) */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E")` }}></div>
     </div>
   );
 };
@@ -2714,27 +2713,33 @@ const AppWrapper = () => {
     showCreateModal, 
     addToPlaylistModal, 
     showAuthModal,
-    themeColor // 获取当前主题色
+    themeColor 
   } = useContext(PlayerContext);
 
-  // 🌟 判断是否开启“少女模式”
+  // 判断是否开启“少女模式” (颜色值必须精确匹配 ThemeSelector 里的值)
   const isGirlishMode = themeColor === '#FF9EAA';
 
   return (
+    // 🌟 动态添加 girlish-theme 类名
     <div 
-      className={`flex h-screen overflow-hidden transition-all duration-1000 relative ${isGirlishMode ? 'font-serif-elegant selection:bg-[#FF9EAA] selection:text-white' : 'font-sans selection:bg-green-500 selection:text-black'} text-white`}
+      className={`flex h-screen overflow-hidden transition-all duration-1000 relative text-white ${isGirlishMode ? 'girlish-theme selection:bg-[#FF9EAA] selection:text-white' : 'font-sans selection:bg-green-500 selection:text-black'}`}
       style={{
-        // 🌟 如果是少女模式，背景色改为深玫瑰色调，否则保持黑色
-        backgroundColor: isGirlishMode ? '#2a1a1e' : 'black', 
+        // 少女模式背景改为 "深玫瑰色"，普通模式为 "纯黑"
+        backgroundColor: isGirlishMode ? '#231518' : 'black', 
       }}
     >
-      {/* 🌟 插入少女风背景特效 */}
+      {/* 🌟 必须在这里渲染 GlobalStyles，否则字体和动画不会生效！ */}
+      <GlobalStyles />
+      
+      {/* 🌟 背景特效层 (z-index: 0) */}
       <SparkleBackground isActive={isGirlishMode} />
 
-      {/* 1. 左侧导航栏 */}
-      <Sidebar />
+      {/* 1. 左侧导航栏 (z-index: 10，防止被背景遮挡) */}
+      <div className="relative z-10 hidden md:block">
+        <Sidebar />
+      </div>
       
-      {/* 2. 主内容区域 (增加 z-10 确保在背景之上) */}
+      {/* 2. 主内容区域 (z-index: 10) */}
       <div className="flex-1 flex flex-col relative h-full z-10">
         {activeTab === 'home' && <HomePage />}
         {activeTab === 'search' && <SearchPage />}
@@ -2748,7 +2753,7 @@ const AppWrapper = () => {
         <MobileNav />
       </div>
 
-      {/* 3. 全屏/弹窗层 (z-index 很高，不受背景影响) */}
+      {/* 3. 全屏/弹窗层 (z-index: 50+) */}
       {showLyrics && <LyricsPage />}
       {showCreateModal && <CreatePlaylistModal />}
       {addToPlaylistModal.isOpen && <AddToPlaylistModal />}
