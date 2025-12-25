@@ -69,8 +69,8 @@ export const PlayerContext = createContext();
 // Provider 组件 (核心逻辑)
 // ==========================================
 export const PlayerProvider = ({ children }) => {
-  // 后端 API 地址 (请确保端口号与 server.js 一致)
- const API_URL = '/api';
+  // 后端 API 地址
+  const API_URL = '/api';
 
   // ==============================
   // 1. 全局状态定义
@@ -84,12 +84,12 @@ export const PlayerProvider = ({ children }) => {
 
   // 播放器状态
   const [currentSong, setCurrentSong] = useState(null); 
-  const [currentLyrics, setCurrentLyrics] = useState([]); // 存当前解析后的歌词
+  const [currentLyrics, setCurrentLyrics] = useState([]); 
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [volume, setVolume] = useState(0.7);
   const [queue, setQueue] = useState([]);
-  const [repeatMode, setRepeatMode] = useState('off'); // 'off' | 'all' | 'one'
+  const [repeatMode, setRepeatMode] = useState('off'); 
   const audioRef = useRef(null);
 
   // 界面/弹窗状态
@@ -115,24 +115,18 @@ export const PlayerProvider = ({ children }) => {
   // 2. 核心辅助函数
   // ==============================
 
-  // 🎨 [新增] 更改主题色函数
   const changeThemeColor = (color) => {
     setThemeColor(color);
     localStorage.setItem('music_hub_theme', color);
-    // 同时更新 CSS 变量，方便全站 CSS 调用
     document.documentElement.style.setProperty('--primary-color', color);
-
-    document.documentElement.style.setProperty('--bg-gradient-color', `${color}CC`); // 33 代表 20% 透明度
-
+    document.documentElement.style.setProperty('--bg-gradient-color', `${color}CC`);
   };
 
-  // 显示全局提示 (3秒自动消失)
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
 
-  // 检查登录权限
   const checkAuth = () => {
     if (!user) {
       setShowAuthModal(true);
@@ -143,52 +137,34 @@ export const PlayerProvider = ({ children }) => {
   };
 
   // ==============================
-  // 3. 数据初始化 (只加载公开的歌曲数据)
+  // 3. 数据初始化 (歌曲 & 主题)
   // ==============================
 
   useEffect(() => {
-    // 🎨 [新增] 初始化主题色
+    // 1. 初始化主题色
     const savedColor = localStorage.getItem('music_hub_theme');
     if (savedColor) {
       setThemeColor(savedColor);
       document.documentElement.style.setProperty('--primary-color', savedColor);
     }
 
+    // 2. 加载公共歌曲数据
     const fetchPublicData = async () => {
       try {
         const songsRes = await axios.get(`${API_URL}/songs`);
-        const processedSongs = songsRes.data.map(song => ({
-          ...song,
-          id: song._id, 
-          lyrics: []
-        }));
-        setAllSongs(processedSongs);
-        setQueue(processedSongs);
-        if (processedSongs.length > 0) setCurrentSong(processedSongs[0]); 
-      } catch (err) {
-        console.error("初始化数据失败:", err);
-      }
-    };
-    fetchPublicData();
-  }, []);
-
-  useEffect(() => {
-    const fetchPublicData = async () => {
-      try {
-        // 🌟 修改点：初始化只请求歌曲，不请求歌单（歌单由下面的 user effect 处理）
-        const songsRes = await axios.get(`${API_URL}/songs`);
-
+        
         // 处理歌曲 (映射 ID)
         const processedSongs = songsRes.data.map(song => ({
           ...song,
           id: song._id, 
           lyrics: [] // 初始不解析，按需加载
         }));
+        
         setAllSongs(processedSongs);
         setQueue(processedSongs);
         
         // 默认选中第一首
-        if (processedSongs.length > 0) {
+        if (processedSongs.length > 0 && !currentSong) {
           setCurrentSong(processedSongs[0]); 
         }
 
@@ -199,46 +175,40 @@ export const PlayerProvider = ({ children }) => {
     };
 
     fetchPublicData();
-  }, []);
+  }, []); // 只在组件挂载时执行一次
 
   // ==============================
-  // 4. 监听用户变化，加载专属歌单
+  // 4. 监听用户变化，加载专属歌单 (🌟 修复重点)
   // ==============================
-// 监听用户变化，加载可见歌单
-// 找到 PlayerProvider 里的这个 useEffect
-// 找到这个位置并替换
-useEffect(() => {
-  const fetchVisiblePlaylists = async () => {
-    const userId = user?.id || user?._id;
+  useEffect(() => {
+    const fetchVisiblePlaylists = async () => {
+      // 兼容两种 ID 写法
+      const userId = user?.id || user?._id;
 
-    try {
-      const res = await axios.get(`${API_URL}/playlists`, {
-        params: userId ? { userId: userId } : {}
-      });
-      
-      const processedPlaylists = res.data.map(pl => ({
-        ...pl,
-        id: pl._id || pl.id, // 🌟 统一 ID 映射
-        songs: pl.songs ? pl.songs.map(s => ({...s, id: s._id || s.id})) : []
-      }));
+      try {
+        const res = await axios.get(`${API_URL}/playlists`, {
+          params: userId ? { userId: userId } : {}
+        });
+        
+        const processedPlaylists = res.data.map(pl => ({
+          ...pl,
+          id: pl._id || pl.id, 
+          songs: pl.songs ? pl.songs.map(s => ({...s, id: s._id || s.id})) : []
+        }));
 
-      // 🌟 修复逻辑：只有当数据真的不同时，或者当前列表为空时才更新
-      // 这可以防止 createPlaylist 刚加进去的数据被后端旧数据覆盖
-      setPlaylists(prev => {
-        // 如果后端返回的数据量比前端现有的少，且刚才触发了创建，就先不覆盖
-        if (prev.length > processedPlaylists.length && userId) {
-           return prev; 
-        }
-        return processedPlaylists;
-      });
-      
-    } catch (err) {
-      console.error("加载歌单失败:", err);
-    }
-  };
+        // 🌟 修复：移除之前的 if (prev.length > ...) 判断
+        // 始终信任后端返回的数据，确保刷新页面后能看到最新列表
+        setPlaylists(processedPlaylists);
+        
+      } catch (err) {
+        console.error("加载歌单失败:", err);
+      }
+    };
 
-  fetchVisiblePlaylists();
-}, [user?.id]); // 🌟 优化：只监听 ID 变化，不要监听整个 user 对象 // 监听 user 变化，确保登录后能刷新出“公共+私人”歌单 // 🌟 监听 user 变化，登录/退出时都会重新加载 // 当用户登录或退出时，刷新列表 // 依赖项是 user，当登录/退出时会自动触发
+    // 无论有没有用户，都尝试加载（可能是公共歌单）
+    // 当 user 变化时（登录/退出），重新触发
+    fetchVisiblePlaylists();
+  }, [user?.id, user?._id]); 
 
   // ==============================
   // 5. 歌词按需加载系统
@@ -247,21 +217,19 @@ useEffect(() => {
     if (!currentSong) return;
 
     const loadLyrics = async () => {
-      setCurrentLyrics([]); // 先清空
+      setCurrentLyrics([]); 
       
-      // 优先处理 lrcUrl (文件路径)
       if (currentSong.lrcUrl) {
         try {
           const res = await fetch(currentSong.lrcUrl);
           if (!res.ok) throw new Error("下载失败");
           const text = await res.text();
-          setCurrentLyrics(parseLRC(text)); // 使用外部定义的 parseLRC
+          setCurrentLyrics(parseLRC(text)); 
         } catch (err) {
           console.warn("歌词文件加载失败", err);
           setCurrentLyrics([{ time: 0, text: "暂无歌词" }]);
         }
       } 
-      // 兼容旧数据
       else if (currentSong.lyrics && typeof currentSong.lyrics === 'string') {
         setCurrentLyrics(parseLRC(currentSong.lyrics));
       } 
@@ -277,13 +245,11 @@ useEffect(() => {
   // 6. 用户认证系统
   // ==============================
   
-  // 初始化检查本地缓存
   useEffect(() => {
     const storedUser = localStorage.getItem('music_hub_user');
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
-        // 确保 id 存在
         if (!parsedUser.id && parsedUser._id) parsedUser.id = parsedUser._id;
         setUser(parsedUser);
         if (parsedUser.likedSongs) setLikedSongs(new Set(parsedUser.likedSongs));
@@ -298,7 +264,6 @@ useEffect(() => {
       const res = await axios.post(`${API_URL}/login`, { email, password });
       if (res.data.success) {
         const userData = res.data.user;
-        // 确保前端使用的 ID 字段统一
         if (!userData.id && userData._id) userData.id = userData._id;
         
         setUser(userData);
@@ -334,7 +299,7 @@ useEffect(() => {
     setUser(null);
     localStorage.removeItem('music_hub_user');
     setLikedSongs(new Set());
-    setPlaylists([]); // 退出时清空歌单
+    setPlaylists([]); 
     setActiveTab('home');
     setCurrentPlaylist(null);
     showToast('已安全退出登录');
@@ -426,11 +391,9 @@ useEffect(() => {
   // 8. 用户交互操作 (数据库同步)
   // ==============================
 
-  // 点赞/取消点赞
   const toggleLike = async (songId) => {
     if (!checkAuth()) return;
 
-    // 1. 乐观更新
     const isLikedBefore = likedSongs.has(songId);
     setLikedSongs(prev => {
       const newLiked = new Set(prev);
@@ -442,7 +405,6 @@ useEffect(() => {
     if (isLikedBefore) showToast('已取消喜欢');
     else showToast('已添加到喜欢的歌曲');
 
-    // 2. 发送请求
     try {
       const userId = user.id || user._id;
       await axios.post(`${API_URL}/user/like`, {
@@ -452,7 +414,6 @@ useEffect(() => {
     } catch (err) {
       console.error("点赞同步失败:", err);
       showToast("网络错误，操作未保存", "error");
-      // 回滚
       setLikedSongs(prev => {
         const newLiked = new Set(prev);
         if (isLikedBefore) newLiked.add(songId);
@@ -462,7 +423,6 @@ useEffect(() => {
     }
   };
 
-  // 关注艺人 (纯前端模拟)
   const toggleFollowArtist = (artistName) => {
     if (!checkAuth()) return;
     setFollowedArtists(prev => {
@@ -478,95 +438,76 @@ useEffect(() => {
     });
   };
 
-  // [修改] 创建歌单 (支持自定义封面)
-// 在 PlayerProvider 的 createPlaylist 函数中
-// 修改 PlayerProvider 内部的创建函数
-const createPlaylist = async (name, coverUrl, isPublic = false) => {
-  // 1. 权限检查
-  if (!checkAuth()) return;
-
-  // 2. 获取 ID (兼容两种写法)
-  const userId = user?.id || user?._id;
-  
-  if (!userId) {
-    showToast("创建失败：无法获取当前用户信息", "error");
-    return;
-  }
-
-  try {
-    // 3. 发送请求
-    const res = await axios.post(`${API_URL}/playlists`, {
-      name: name,
-      cover: coverUrl || "https://i.ibb.co/6cGhCCj6/Meteor-1-MIFEN.jpg",
-      description: isPublic ? "公共歌单" : "新建歌单",
-      userId: userId,   // 🌟 核心：确保传给后端的字段名是 userId
-      isPublic: isPublic
-    });
-
-    // 4. 更新本地状态 (后端返回的数据通常包含 _id)
-    const newPlaylist = { 
-      ...res.data, 
-      id: res.data._id || res.data.id 
-    };
+  const createPlaylist = async (name, coverUrl, isPublic = false) => {
+    if (!checkAuth()) return;
+    const userId = user?.id || user?._id;
     
-    setPlaylists(prev => {
-      // 检查是否已经存在（防止重复显示）
-      if (prev.find(p => (p._id || p.id) === newPlaylist.id)) return prev;
-      return [...prev, newPlaylist];
-    });
-    showToast(`歌单 "${name}" 创建成功！`);
-    setShowCreateModal(false); // 关闭弹窗
-  } catch (err) {
-    console.error("创建歌单详细错误:", err.response?.data || err.message);
-    showToast(err.response?.data?.message || "创建失败，请检查网络", "error");
-  }
-};
+    if (!userId) {
+      showToast("创建失败：无法获取当前用户信息", "error");
+      return;
+    }
 
+    try {
+      const res = await axios.post(`${API_URL}/playlists`, {
+        name: name,
+        cover: coverUrl || "https://i.ibb.co/6cGhCCj6/Meteor-1-MIFEN.jpg",
+        description: isPublic ? "公共歌单" : "新建歌单",
+        userId: userId,
+        isPublic: isPublic
+      });
 
-const deletePlaylist = async (playlistId) => {
-  // 1. 先询问用户，防止误点
-  if (!window.confirm("确定要永久删除这个歌单吗？")) return;
+      const newPlaylist = { 
+        ...res.data, 
+        id: res.data._id || res.data.id 
+      };
+      
+      setPlaylists(prev => {
+        if (prev.find(p => (p._id || p.id) === newPlaylist.id)) return prev;
+        return [...prev, newPlaylist];
+      });
+      showToast(`歌单 "${name}" 创建成功！`);
+      setShowCreateModal(false); 
+    } catch (err) {
+      console.error("创建歌单详细错误:", err.response?.data || err.message);
+      showToast(err.response?.data?.message || "创建失败，请检查网络", "error");
+    }
+  };
 
-  const userId = user?.id || user?._id;
-  
-  try {
-    // 2. 发起后端请求
-    await axios.delete(`${API_URL}/playlists/${playlistId}`, {
-      params: { userId } 
-    });
-
-    // 3. ✅ 成功后的核心操作：从前端列表中移除
-    setPlaylists(prev => prev.filter(p => (p._id || p.id) !== playlistId));
+  const deletePlaylist = async (playlistId) => {
+    if (!window.confirm("确定要永久删除这个歌单吗？")) return;
+    const userId = user?.id || user?._id;
     
-    // 4. 🎉 弹出成功提示
-    alert("✨ 歌单已成功删除！");
+    try {
+      await axios.delete(`${API_URL}/playlists/${playlistId}`, {
+        params: { userId } 
+      });
 
-    // 5. 自动切回首页（防止停留在已删除歌单的详情页）
-    setActiveTab('home'); 
-    setCurrentPlaylist(null);
+      setPlaylists(prev => prev.filter(p => (p._id || p.id) !== playlistId));
+      
+      // 如果当前正在查看该歌单，返回首页
+      if (currentPlaylist && (currentPlaylist.id === playlistId || currentPlaylist._id === playlistId)) {
+          setActiveTab('home'); 
+          setCurrentPlaylist(null);
+      }
+      
+      showToast("✨ 歌单已成功删除！");
+    } catch (err) {
+      console.error("删除失败:", err);
+      showToast(err.response?.data?.message || "删除失败，请稍后再试", "error");
+    }
+  };
 
-  } catch (err) {
-    console.error("删除失败:", err);
-    alert(err.response?.data?.message || "删除失败，请稍后再试");
-  }
-};
-
-// 记得在 value 中导出 deletePlaylist
-
-  // [新增] 更新歌单封面
   const updatePlaylistCover = async (playlistId, newCoverUrl) => {
     if (!checkAuth() || !newCoverUrl) return;
 
-    // 1. 乐观更新 (列表)
     setPlaylists(prev => prev.map(pl => {
-      if (pl.id === playlistId) {
+      if (pl.id === playlistId || pl._id === playlistId) {
         return { ...pl, cover: newCoverUrl };
       }
       return pl;
     }));
 
-    // 2. 乐观更新 (当前详情页)
-    if (currentPlaylist && currentPlaylist.id === playlistId) {
+    if (currentPlaylist && (currentPlaylist.id === playlistId || currentPlaylist._id === playlistId)) {
       setCurrentPlaylist(prev => ({ ...prev, cover: newCoverUrl }));
     }
 
@@ -583,20 +524,17 @@ const deletePlaylist = async (playlistId) => {
     }
   };
 
-  // [新增] 更新歌单名称
   const updatePlaylistName = async (playlistId, newName) => {
     if (!checkAuth() || !newName.trim()) return;
 
-    // 1. 乐观更新 (列表)
     setPlaylists(prev => prev.map(pl => {
-      if (pl.id === playlistId) {
+      if (pl.id === playlistId || pl._id === playlistId) {
         return { ...pl, name: newName };
       }
       return pl;
     }));
 
-    // 2. 乐观更新 (当前详情页)
-    if (currentPlaylist && currentPlaylist.id === playlistId) {
+    if (currentPlaylist && (currentPlaylist.id === playlistId || currentPlaylist._id === playlistId)) {
       setCurrentPlaylist(prev => ({ ...prev, name: newName }));
     }
 
@@ -613,26 +551,25 @@ const deletePlaylist = async (playlistId) => {
     }
   };
 
-  // 添加歌曲到歌单
   const addSongToPlaylist = async (playlistId, song) => {
-    const targetPlaylist = playlists.find(pl => pl.id === playlistId);
+    // 兼容 ID 查找
+    const targetPlaylist = playlists.find(pl => pl.id === playlistId || pl._id === playlistId);
     if (!targetPlaylist) return;
 
-    // 查重
-    const exists = targetPlaylist.songs.find(s => s.id === song.id);
+    // 统一 ID 映射，确保 song.id 存在
+    const songIdToCheck = song.id || song._id;
+
+    const exists = targetPlaylist.songs.find(s => (s.id || s._id) === songIdToCheck);
     if (exists) {
       showToast('歌曲已存在于该歌单', 'error');
       return;
     } 
     
-    // 计算新数据
     const newSongs = [...targetPlaylist.songs, song];
-    // 如果是第一首歌，自动把歌单封面设为这首歌的封面
     const newCover = newSongs.length === 1 ? song.cover : targetPlaylist.cover;
 
-    // 乐观更新
     setPlaylists(prev => prev.map(pl => {
-      if (pl.id === playlistId) {
+      if (pl.id === playlistId || pl._id === playlistId) {
         return { ...pl, songs: newSongs, cover: newCover };
       }
       return pl;
@@ -641,7 +578,6 @@ const deletePlaylist = async (playlistId) => {
     closeAddToPlaylistModal();
     showToast('已添加到歌单');
 
-    // 发送请求
     try {
       await axios.put(`${API_URL}/playlists/${playlistId}`, {
         songs: newSongs,
