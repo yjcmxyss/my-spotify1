@@ -3,7 +3,7 @@ import axios from 'axios';
 import { 
   Play, Pause, SkipBack, SkipForward, Volume2, Search, Home, Library, 
   ListMusic, Heart, Maximize2, ChevronDown, Repeat, Shuffle, X, Plus,
-  ArrowLeft, Clock, BadgeCheck, Mic2, Users, ListPlus, Repeat1, ArrowRight,Star  
+  ArrowLeft, Clock, BadgeCheck, Mic2, Users, ListPlus, Repeat1, ArrowRight,Star,Sparkles  
 } from 'lucide-react';
 
 // --- 全局样式 ---
@@ -492,6 +492,8 @@ export const PlayerProvider = ({ children }) => {
   // 🔔 全局消息提示 (Toast)
   const [toast, setToast] = useState(null);
 
+  const [showStarParticles, setShowStarParticles] = useState(true);
+
   // ==============================
   // 2. 核心辅助函数
   // ==============================
@@ -524,10 +526,15 @@ export const PlayerProvider = ({ children }) => {
   useEffect(() => {
     // 1. 初始化主题色
     const savedColor = localStorage.getItem('music_hub_theme');
+     const savedStars = localStorage.getItem('music_hub_stars');
     if (savedColor) {
       setThemeColor(savedColor);
       document.documentElement.style.setProperty('--primary-color', savedColor);
     }
+    if (savedStars !== null) {
+    setShowStarParticles(JSON.parse(savedStars));
+  }
+
 
     // 2. 加载公共歌曲数据
     const fetchPublicData = async () => {
@@ -557,6 +564,14 @@ export const PlayerProvider = ({ children }) => {
 
     fetchPublicData();
   }, []); 
+
+  const toggleStarParticles = () => {
+  setShowStarParticles(prev => {
+    const newState = !prev;
+    localStorage.setItem('music_hub_stars', JSON.stringify(newState)); // 保存配置
+    return newState;
+  });
+};
 
   // ==============================
   // 4. 监听用户变化，加载专属歌单 (🌟 修复刷新延迟)
@@ -1016,6 +1031,7 @@ export const PlayerProvider = ({ children }) => {
       allSongs, playlists,
 
       themeColor, changeThemeColor,
+      showStarParticles, toggleStarParticles,
       
       // 播放状态
       currentSong: contextCurrentSong, 
@@ -1137,7 +1153,8 @@ const Sidebar = () => {
     activeTab, setActiveTab, likedSongs, setShowCreateModal, 
     setCurrentPlaylist, setCurrentArtist, playlists,
     user, deletePlaylist,
-    themeColor, changeThemeColor 
+    themeColor, changeThemeColor,
+    showStarParticles, toggleStarParticles
   } = useContext(PlayerContext);
   
   const handleTabClick = (tabId) => {
@@ -1188,6 +1205,27 @@ const Sidebar = () => {
             />
           ))}
         </div>
+
+        <div className="mt-3 pt-3 border-t border-white/10">
+          <div 
+            onClick={toggleStarParticles}
+            className="flex items-center justify-between cursor-pointer group py-1"
+          >
+            <div className={`flex items-center gap-2 text-xs font-bold transition-colors ${showStarParticles ? 'text-white' : 'text-neutral-500 group-hover:text-neutral-300'}`}>
+              <Sparkles size={14} />
+              <span>星河特效</span>
+            </div>
+            
+            {/* 开关滑块 */}
+            <div 
+              className={`w-8 h-4 rounded-full relative transition-colors duration-300 ${showStarParticles ? 'bg-white' : 'bg-neutral-700'}`}
+              style={{ backgroundColor: showStarParticles ? themeColor : '' }}
+            >
+              <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow-sm transition-all duration-300 ${showStarParticles ? 'left-4.5' : 'left-0.5'}`} />
+            </div>
+          </div>
+        </div>
+
       </div>
     );
   };
@@ -3105,7 +3143,8 @@ const AppWrapper = () => {
     showLyrics, 
     showCreateModal, 
     addToPlaylistModal, 
-    showAuthModal 
+    showAuthModal,
+    showStarParticles 
   } = useContext(PlayerContext);
 
   return (
@@ -3115,6 +3154,7 @@ const AppWrapper = () => {
       {/* ✨ 0. 动态流光背景层 (最底层) */}
       <AmbientBackground />
        <StarBorderParticles />
+       {showStarParticles && <StarBorderParticles />}
        <ClickSparkles />
 
       {/* 1. 左侧导航栏 */}
