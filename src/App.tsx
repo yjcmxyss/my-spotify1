@@ -49,72 +49,169 @@ const GlobalStyles = () => (
   `}</style>
 );
 
-const ScreenFrame = () => {
+// ==========================================
+// ✨ 新增：星河粒子流动边框 (Star Particle Border)
+// ==========================================
+const StarBorderParticles = () => {
   const { themeColor } = useContext(PlayerContext);
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    let animationFrameId;
+    let particles = [];
+    
+    // 配置参数
+    const particleCount = 150; // 星星数量
+    const speedBase = 0.5; // 飘动速度
+
+    // 设置尺寸
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // 辅助：Hex 转 RGB 用于控制透明度
+    const hexToRgb = (hex) => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : { r: 255, g: 255, b: 255 };
+    };
+
+    // 🌟 星星粒子类
+    class Particle {
+      constructor() {
+        this.reset();
+      }
+
+      reset() {
+        const w = canvas.width;
+        const h = canvas.height;
+        const border = 50; // 边框厚度范围
+
+        // 随机选择四条边之一生成
+        const edge = Math.floor(Math.random() * 4);
+        
+        if (edge === 0) { // 上
+          this.x = Math.random() * w;
+          this.y = Math.random() * border;
+          this.vx = (Math.random() - 0.5) * speedBase;
+          this.vy = Math.random() * speedBase; // 向下飘
+        } else if (edge === 1) { // 右
+          this.x = w - Math.random() * border;
+          this.y = Math.random() * h;
+          this.vx = -Math.random() * speedBase; // 向左飘
+          this.vy = (Math.random() - 0.5) * speedBase;
+        } else if (edge === 2) { // 下
+          this.x = Math.random() * w;
+          this.y = h - Math.random() * border;
+          this.vx = (Math.random() - 0.5) * speedBase;
+          this.vy = -Math.random() * speedBase; // 向上飘
+        } else { // 左
+          this.x = Math.random() * border;
+          this.y = Math.random() * h;
+          this.vx = Math.random() * speedBase; // 向右飘
+          this.vy = (Math.random() - 0.5) * speedBase;
+        }
+
+        this.size = Math.random() * 2 + 0.5; // 大小
+        this.life = 0;
+        this.maxLife = Math.random() * 100 + 50; // 寿命
+        this.alpha = 0;
+        this.angle = Math.random() * Math.PI * 2; // 旋转角度
+        this.spin = (Math.random() - 0.5) * 0.1; // 自转速度
+        
+        // 形状：0=圆形, 1=四角星
+        this.type = Math.random() > 0.3 ? 'star' : 'circle'; 
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life++;
+        this.angle += this.spin;
+
+        // 淡入淡出逻辑
+        if (this.life < 20) {
+          this.alpha = this.life / 20;
+        } else if (this.life > this.maxLife - 20) {
+          this.alpha = (this.maxLife - this.life) / 20;
+        }
+
+        // 死亡重置
+        if (this.life >= this.maxLife) {
+          this.reset();
+        }
+      }
+
+      draw(ctx, rgb) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        ctx.globalAlpha = this.alpha * (Math.random() * 0.5 + 0.5); // 闪烁效果
+        ctx.fillStyle = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+        ctx.shadowBlur = 10; // 发光
+        ctx.shadowColor = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+
+        if (this.type === 'star') {
+          // 画四角星 (Sparkle)
+          ctx.beginPath();
+          for (let i = 0; i < 4; i++) {
+            ctx.lineTo(0, this.size * -1.5);
+            ctx.bezierCurveTo(this.size * 0.5, this.size * -0.5, this.size * 0.5, this.size * -0.5, this.size, 0);
+            ctx.rotate(Math.PI / 2);
+          }
+          ctx.fill();
+        } else {
+          // 画圆点
+          ctx.beginPath();
+          ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.restore();
+      }
+    }
+
+    // 初始化粒子
+    for (let i = 0; i < particleCount; i++) {
+      particles.push(new Particle());
+    }
+
+    // 动画循环
+    const render = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const rgb = hexToRgb(themeColor);
+
+      particles.forEach(p => {
+        p.update();
+        p.draw(ctx, rgb);
+      });
+
+      animationFrameId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [themeColor]); // 当主题色变化时重新渲染
 
   return (
-    <div className="fixed inset-0 z-[60] pointer-events-none">
-      <style>{`
-        @keyframes spin-aurora {
-          0% { --rotate-angle: 0deg; }
-          100% { --rotate-angle: 360deg; }
-        }
-        
-        /* 自定义属性动画需要 CSS Houdini 支持，为了兼容性我们用伪元素旋转 */
-        @keyframes spin-pseudo {
-          0% { transform: translate(-50%, -50%) rotate(0deg); }
-          100% { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-      `}</style>
-
-      {/* 容器：定义遮罩，只显示边缘 4px */}
-      <div 
-        className="absolute inset-0 overflow-hidden"
-        style={{
-          // 这里的 padding 控制光边的粗细
-          padding: '4px', 
-          // 这里的 radius 控制圆角
-          borderRadius: '0px', 
-          // 核心黑科技：使用 mask 合成，把中间挖空
-          mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-          maskComposite: 'exclude',
-          WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-          WebkitMaskComposite: 'xor',
-        }}
-      >
-        {/* 背景旋转层：比屏幕大很多，中心旋转 */}
-        <div 
-          className="absolute top-1/2 left-1/2 w-[200vmax] h-[200vmax]"
-          style={{
-            // 这是一个五彩斑斓但以主题色为主的渐变
-            background: `conic-gradient(
-              from 0deg, 
-              transparent 0%, 
-              ${themeColor} 10%, 
-              transparent 20%, 
-              transparent 40%, 
-              #ffffff 50%, 
-              transparent 60%, 
-              transparent 80%, 
-              ${themeColor} 90%, 
-              transparent 100%
-            )`,
-            animation: 'spin-pseudo 8s linear infinite',
-            opacity: 0.8,
-            filter: 'blur(20px)', // 让光线晕开，像极光
-          }}
-        ></div>
-      </div>
-
-      {/* 额外的内发光层 (增加氛围) */}
-      <div 
-        className="absolute inset-0"
-        style={{
-          boxShadow: `inset 0 0 40px -10px ${themeColor}40`,
-          borderRadius: '0px'
-        }}
-      ></div>
-    </div>
+    <canvas 
+      ref={canvasRef}
+      className="fixed inset-0 z-[60] pointer-events-none"
+    />
   );
 };
 
@@ -2834,7 +2931,7 @@ const AppWrapper = () => {
       
       {/* ✨ 0. 动态流光背景层 (最底层) */}
       <AmbientBackground />
-       <ScreenFrame />
+       <StarBorderParticles />
 
       {/* 1. 左侧导航栏 */}
       {/* z-10 确保浮在背景之上，bg-transparent 交给 Sidebar 内部处理玻璃效果 */}
