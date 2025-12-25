@@ -175,7 +175,7 @@ export const PlayerProvider = ({ children }) => {
     };
 
     fetchPublicData();
-  }, []); // 只在组件挂载时执行一次
+  }, []); 
 
   // ==============================
   // 4. 监听用户变化，加载专属歌单 (🌟 修复刷新延迟)
@@ -494,17 +494,26 @@ export const PlayerProvider = ({ children }) => {
     }
   };
 
+  // [修改] 更新歌单封面 (带权限检查)
   const updatePlaylistCover = async (playlistId, newCoverUrl) => {
     if (!checkAuth() || !newCoverUrl) return;
+    const currentUserId = user?.id || user?._id;
+
+    // 🌟 权限检查
+    const targetPlaylist = playlists.find(pl => (pl.id || pl._id) === playlistId);
+    if (targetPlaylist && targetPlaylist.userId !== currentUserId) {
+      showToast("你没有权限修改此歌单封面", "error");
+      return;
+    }
 
     setPlaylists(prev => prev.map(pl => {
-      if (pl.id === playlistId || pl._id === playlistId) {
+      if ((pl.id || pl._id) === playlistId) {
         return { ...pl, cover: newCoverUrl };
       }
       return pl;
     }));
 
-    if (currentPlaylist && (currentPlaylist.id === playlistId || currentPlaylist._id === playlistId)) {
+    if (currentPlaylist && (currentPlaylist.id || currentPlaylist._id) === playlistId) {
       setCurrentPlaylist(prev => ({ ...prev, cover: newCoverUrl }));
     }
 
@@ -512,7 +521,8 @@ export const PlayerProvider = ({ children }) => {
 
     try {
       await axios.put(`${API_URL}/playlists/${playlistId}`, {
-        cover: newCoverUrl
+        cover: newCoverUrl,
+        userId: currentUserId // 🌟 传给后端鉴权
       });
       showToast('封面更新成功');
     } catch (err) {
@@ -521,17 +531,26 @@ export const PlayerProvider = ({ children }) => {
     }
   };
 
+  // [修改] 更新歌单名称 (带权限检查)
   const updatePlaylistName = async (playlistId, newName) => {
     if (!checkAuth() || !newName.trim()) return;
+    const currentUserId = user?.id || user?._id;
+
+    // 🌟 权限检查
+    const targetPlaylist = playlists.find(pl => (pl.id || pl._id) === playlistId);
+    if (targetPlaylist && targetPlaylist.userId !== currentUserId) {
+      showToast("你没有权限修改此歌单名称", "error");
+      return;
+    }
 
     setPlaylists(prev => prev.map(pl => {
-      if (pl.id === playlistId || pl._id === playlistId) {
+      if ((pl.id || pl._id) === playlistId) {
         return { ...pl, name: newName };
       }
       return pl;
     }));
 
-    if (currentPlaylist && (currentPlaylist.id === playlistId || currentPlaylist._id === playlistId)) {
+    if (currentPlaylist && (currentPlaylist.id || currentPlaylist._id) === playlistId) {
       setCurrentPlaylist(prev => ({ ...prev, name: newName }));
     }
 
@@ -539,7 +558,8 @@ export const PlayerProvider = ({ children }) => {
 
     try {
       await axios.put(`${API_URL}/playlists/${playlistId}`, {
-        name: newName
+        name: newName,
+        userId: currentUserId // 🌟 传给后端鉴权
       });
       showToast('名称修改成功');
     } catch (err) {
@@ -548,7 +568,7 @@ export const PlayerProvider = ({ children }) => {
     }
   };
 
-  // 🌟 核心修改：添加歌曲到歌单 (带权限验证)
+  // [修改] 添加歌曲到歌单 (带权限检查)
   const addSongToPlaylist = async (playlistId, song) => {
     // 1. 登录检查
     if (!checkAuth()) return;
@@ -577,7 +597,7 @@ export const PlayerProvider = ({ children }) => {
 
     // 5. 乐观更新
     setPlaylists(prev => prev.map(pl => {
-      if (pl.id === playlistId || pl._id === playlistId) {
+      if ((pl.id || pl._id) === playlistId) {
         return { ...pl, songs: newSongs, cover: newCover };
       }
       return pl;
@@ -1655,22 +1675,32 @@ const PlaylistDetail = ({ playlist }) => {
     setCurrentPlaylist, 
     goToArtist, 
     updatePlaylistCover, 
-    updatePlaylistName // 1. 引入新函数
+    updatePlaylistName,
+    user // 🌟 1. 获取当前用户
   } = useContext(PlayerContext);
   
+  // 🌟 2. 判断是否是歌单的主人
+  const isOwner = user && (user.id === playlist.userId || user._id === playlist.userId);
+
   // 处理点击封面更换图片
   const handleCoverClick = () => {
+    // 非主人禁止点击
+    if (!isOwner) return;
+
     const newCover = prompt("请输入新的封面图片 URL:", playlist.cover);
     if (newCover && newCover !== playlist.cover) {
-      updatePlaylistCover(playlist.id, newCover);
+      updatePlaylistCover(playlist.id || playlist._id, newCover);
     }
   };
 
-  // 2. 处理点击标题修改名称
+  // 处理点击标题修改名称
   const handleNameClick = () => {
+    // 非主人禁止点击
+    if (!isOwner) return;
+
     const newName = prompt("请输入新的歌单名称:", playlist.name);
     if (newName && newName.trim() !== "" && newName !== playlist.name) {
-      updatePlaylistName(playlist.id, newName);
+      updatePlaylistName(playlist.id || playlist._id, newName);
     }
   };
 
@@ -1690,40 +1720,51 @@ const PlaylistDetail = ({ playlist }) => {
       {/* --- 歌单头部信息区 --- */}
       <div className="flex flex-col md:flex-row items-end gap-8 mb-8">
         
-        {/* 封面图 (点击修改) */}
+        {/* 封面图 (只有主人可以点击修改) */}
         <div 
-          onClick={handleCoverClick}
-          className="w-52 h-52 md:w-60 md:h-60 shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-lg overflow-hidden shrink-0 group relative cursor-pointer"
-          title="点击更换封面"
+          onClick={isOwner ? handleCoverClick : undefined}
+          className={`w-52 h-52 md:w-60 md:h-60 shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-lg overflow-hidden shrink-0 group relative ${isOwner ? 'cursor-pointer' : ''}`}
+          title={isOwner ? "点击更换封面" : ""}
         >
           <img 
             src={playlist.cover} 
-            className="w-full h-full object-cover transition duration-500 group-hover:scale-105" 
+            className={`w-full h-full object-cover transition duration-500 ${isOwner ? 'group-hover:scale-105' : ''}`}
             alt={playlist.name} 
           />
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <span className="text-white font-bold text-sm border border-white px-3 py-1 rounded-full hover:bg-white hover:text-black transition">
-              更换封面
-            </span>
-          </div>
+          
+          {/* 🌟 只有主人才显示“更换封面”遮罩 */}
+          {isOwner && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <span className="text-white font-bold text-sm border border-white px-3 py-1 rounded-full hover:bg-white hover:text-black transition">
+                更换封面
+              </span>
+            </div>
+          )}
         </div>
 
         {/* 文字信息 */}
         <div className="flex-1">
           <p className="text-xs font-bold uppercase tracking-wider mb-2 text-white">歌单</p>
           
-          {/* 3. 修改标题区域：添加点击事件和 Hover 样式 */}
+          {/* 标题区域：只有主人可以 hover 和点击修改 */}
           <div className="group w-fit">
             <h1 
-              onClick={handleNameClick}
-              className="text-5xl md:text-7xl font-black mb-6 tracking-tight text-white drop-shadow-md cursor-pointer hover:underline decoration-4 decoration-green-500 underline-offset-8 transition-all"
-              title="点击修改名称"
+              onClick={isOwner ? handleNameClick : undefined}
+              className={`text-5xl md:text-7xl font-black mb-6 tracking-tight text-white drop-shadow-md transition-all ${
+                isOwner 
+                  ? 'cursor-pointer hover:underline decoration-4 decoration-green-500 underline-offset-8' 
+                  : 'cursor-default'
+              }`}
+              title={isOwner ? "点击修改名称" : ""}
             >
               {playlist.name}
-              {/* 编辑小图标 (Hover时显示) */}
-              <span className="inline-block ml-4 opacity-0 group-hover:opacity-100 transition-opacity align-middle">
-                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-400"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-              </span>
+              
+              {/* 🌟 只有主人才显示编辑小图标 */}
+              {isOwner && (
+                <span className="inline-block ml-4 opacity-0 group-hover:opacity-100 transition-opacity align-middle">
+                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-400"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                </span>
+              )}
             </h1>
           </div>
 
