@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 
 // --- 全局样式 & 字体 & 动画 ---
+// --- 全局样式 & 字体 & 动画 ---
 const GlobalStyles = () => (
   <>
     {/* 引入优雅的衬线字体 Playfair Display */}
@@ -43,6 +44,49 @@ const GlobalStyles = () => (
     `}</style>
   </>
 );
+
+const SparkleBackground = ({ isActive }) => {
+  if (!isActive) return null;
+
+  // 生成随机粒子
+  const particles = useMemo(() => {
+    return Array.from({ length: 20 }).map((_, i) => ({
+      id: i,
+      left: Math.random() * 100 + '%',
+      animationDuration: 10 + Math.random() * 20 + 's',
+      animationDelay: Math.random() * 5 + 's',
+      icon: ['✨', '💖', '🌸', '☁️'][Math.floor(Math.random() * 4)],
+      size: Math.random() * 20 + 10 + 'px'
+    }));
+  }, []);
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+      {/* 柔和的奶油/粉色光晕背景 */}
+      <div className="absolute top-[-20%] left-[-20%] w-[80vw] h-[80vw] bg-[#FF9EAA] rounded-full mix-blend-screen filter blur-[100px] opacity-20 animate-pulse"></div>
+      <div className="absolute bottom-[-20%] right-[-20%] w-[80vw] h-[80vw] bg-[#FFF0F5] rounded-full mix-blend-screen filter blur-[120px] opacity-10"></div>
+
+      {/* 漂浮粒子 */}
+      {particles.map(p => (
+        <div
+          key={p.id}
+          className="absolute bottom-0 text-white/40 drop-shadow-md"
+          style={{
+            left: p.left,
+            fontSize: p.size,
+            animation: `floatUp ${p.animationDuration} linear infinite`,
+            animationDelay: p.animationDelay
+          }}
+        >
+          {p.icon}
+        </div>
+      ))}
+      
+      {/* 噪点纹理，增加胶片感 */}
+      <div className="absolute inset-0 bg-white/5 opacity-50 mix-blend-overlay" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22 opacity=%221%22/%3E%3C/svg%3E")' }}></div>
+    </div>
+  );
+};
 
 // --- 工具函数：解析 LRC 歌词 ---
 const parseLRC = (lrcText) => {
@@ -693,48 +737,7 @@ export const PlayerProvider = ({ children }) => {
 };
 
 // [新增] 少女风氛围背景组件
-const SparkleBackground = ({ isActive }) => {
-  if (!isActive) return null;
 
-  // 生成随机粒子
-  const particles = useMemo(() => {
-    return Array.from({ length: 20 }).map((_, i) => ({
-      id: i,
-      left: Math.random() * 100 + '%',
-      animationDuration: 10 + Math.random() * 20 + 's',
-      animationDelay: Math.random() * 5 + 's',
-      icon: ['✨', '💖', '🌸', '☁️'][Math.floor(Math.random() * 4)],
-      size: Math.random() * 20 + 10 + 'px'
-    }));
-  }, []);
-
-  return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-      {/* 柔和的奶油/粉色光晕背景 */}
-      <div className="absolute top-[-20%] left-[-20%] w-[80vw] h-[80vw] bg-[#FF9EAA] rounded-full mix-blend-screen filter blur-[100px] opacity-20 animate-pulse"></div>
-      <div className="absolute bottom-[-20%] right-[-20%] w-[80vw] h-[80vw] bg-[#FFF0F5] rounded-full mix-blend-screen filter blur-[120px] opacity-10"></div>
-
-      {/* 漂浮粒子 */}
-      {particles.map(p => (
-        <div
-          key={p.id}
-          className="absolute bottom-0 text-white/40 drop-shadow-md"
-          style={{
-            left: p.left,
-            fontSize: p.size,
-            animation: `floatUp ${p.animationDuration} linear infinite`,
-            animationDelay: p.animationDelay
-          }}
-        >
-          {p.icon}
-        </div>
-      ))}
-      
-      {/* 噪点纹理，增加胶片感 */}
-      <div className="absolute inset-0 bg-white/5 opacity-50 mix-blend-overlay" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22 opacity=%221%22/%3E%3C/svg%3E")' }}></div>
-    </div>
-  );
-};
 
 const FollowedArtistsPage = () => {
   const { 
