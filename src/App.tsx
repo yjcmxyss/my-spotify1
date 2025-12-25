@@ -178,7 +178,7 @@ export const PlayerProvider = ({ children }) => {
   }, []); // 只在组件挂载时执行一次
 
   // ==============================
-  // 4. 监听用户变化，加载专属歌单 (🌟 修复重点)
+  // 4. 监听用户变化，加载专属歌单 (🌟 修复刷新延迟)
   // ==============================
   useEffect(() => {
     const fetchVisiblePlaylists = async () => {
@@ -196,8 +196,7 @@ export const PlayerProvider = ({ children }) => {
           songs: pl.songs ? pl.songs.map(s => ({...s, id: s._id || s.id})) : []
         }));
 
-        // 🌟 修复：移除之前的 if (prev.length > ...) 判断
-        // 始终信任后端返回的数据，确保刷新页面后能看到最新列表
+        // 🌟 修复：移除 if (prev.length > ...) 检查，始终信任后端数据
         setPlaylists(processedPlaylists);
         
       } catch (err) {
@@ -205,8 +204,6 @@ export const PlayerProvider = ({ children }) => {
       }
     };
 
-    // 无论有没有用户，都尝试加载（可能是公共歌单）
-    // 当 user 变化时（登录/退出），重新触发
     fetchVisiblePlaylists();
   }, [user?.id, user?._id]); 
 
@@ -551,14 +548,24 @@ export const PlayerProvider = ({ children }) => {
     }
   };
 
+  // 🌟 核心修改：添加歌曲到歌单 (带权限验证)
   const addSongToPlaylist = async (playlistId, song) => {
-    // 兼容 ID 查找
-    const targetPlaylist = playlists.find(pl => pl.id === playlistId || pl._id === playlistId);
+    // 1. 登录检查
+    if (!checkAuth()) return;
+    const currentUserId = user?.id || user?._id;
+
+    // 2. 找到歌单
+    const targetPlaylist = playlists.find(pl => (pl.id || pl._id) === playlistId);
     if (!targetPlaylist) return;
 
-    // 统一 ID 映射，确保 song.id 存在
-    const songIdToCheck = song.id || song._id;
+    // 🌟 3. 权限检查：必须是自己的歌单
+    if (targetPlaylist.userId !== currentUserId) {
+      showToast('你只能修改自己的歌单', 'error');
+      return;
+    }
 
+    // 4. 重复检查
+    const songIdToCheck = song.id || song._id;
     const exists = targetPlaylist.songs.find(s => (s.id || s._id) === songIdToCheck);
     if (exists) {
       showToast('歌曲已存在于该歌单', 'error');
@@ -568,6 +575,7 @@ export const PlayerProvider = ({ children }) => {
     const newSongs = [...targetPlaylist.songs, song];
     const newCover = newSongs.length === 1 ? song.cover : targetPlaylist.cover;
 
+    // 5. 乐观更新
     setPlaylists(prev => prev.map(pl => {
       if (pl.id === playlistId || pl._id === playlistId) {
         return { ...pl, songs: newSongs, cover: newCover };
@@ -578,8 +586,10 @@ export const PlayerProvider = ({ children }) => {
     closeAddToPlaylistModal();
     showToast('已添加到歌单');
 
+    // 6. 发送请求 (带上 userId 供后端二次验证)
     try {
       await axios.put(`${API_URL}/playlists/${playlistId}`, {
+        userId: currentUserId, 
         songs: newSongs,
         cover: newCover
       });

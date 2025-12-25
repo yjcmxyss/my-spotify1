@@ -286,10 +286,17 @@ app.put('/api/playlists/:id', async (req, res) => {
     const playlist = await Playlist.findById(req.params.id);
     if (!playlist) return res.status(404).json({ message: '歌单不存在' });
 
+    // 🌟 新增：权限检查
+    // 如果请求体里包含了 userId（前端addSongToPlaylist传了），则进行验证
+    // 注意：如果是更新封面/名称的操作，也建议前端带上 userId，或者在这里做个宽松处理
+    if (req.body.userId && playlist.userId !== req.body.userId) {
+      return res.status(403).json({ message: '无权修改此歌单' });
+    }
+
     // 更新逻辑
     if (req.body.songs) playlist.songs = req.body.songs;
     if (req.body.cover) playlist.cover = req.body.cover;
-    if (req.body.name) playlist.name = req.body.name; // 支持更新名称
+    if (req.body.name) playlist.name = req.body.name;
 
     const updatedPlaylist = await playlist.save();
     res.json(updatedPlaylist);
