@@ -52,6 +52,9 @@ const GlobalStyles = () => (
 // ==========================================
 // ✨ 新增：星河粒子流动边框 (Star Particle Border)
 // ==========================================
+// ==========================================
+// ✨ 新增：星河粒子流动边框 (含大五角星版)
+// ==========================================
 const StarBorderParticles = () => {
   const { themeColor } = useContext(PlayerContext);
   const canvasRef = useRef(null);
@@ -65,10 +68,9 @@ const StarBorderParticles = () => {
     let particles = [];
     
     // 配置参数
-    const particleCount = 150; // 星星数量
-    const speedBase = 0.5; // 飘动速度
+    const particleCount = 120; // 总数量
+    const speedBase = 0.4; // 飘动速度
 
-    // 设置尺寸
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -76,7 +78,6 @@ const StarBorderParticles = () => {
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // 辅助：Hex 转 RGB 用于控制透明度
     const hexToRgb = (hex) => {
       const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
       return result ? {
@@ -86,7 +87,6 @@ const StarBorderParticles = () => {
       } : { r: 255, g: 255, b: 255 };
     };
 
-    // 🌟 星星粒子类
     class Particle {
       constructor() {
         this.reset();
@@ -95,42 +95,53 @@ const StarBorderParticles = () => {
       reset() {
         const w = canvas.width;
         const h = canvas.height;
-        const border = 50; // 边框厚度范围
+        const border = 60; // 边框范围
 
-        // 随机选择四条边之一生成
+        // 随机选择四条边
         const edge = Math.floor(Math.random() * 4);
         
         if (edge === 0) { // 上
           this.x = Math.random() * w;
           this.y = Math.random() * border;
           this.vx = (Math.random() - 0.5) * speedBase;
-          this.vy = Math.random() * speedBase; // 向下飘
+          this.vy = Math.random() * speedBase;
         } else if (edge === 1) { // 右
           this.x = w - Math.random() * border;
           this.y = Math.random() * h;
-          this.vx = -Math.random() * speedBase; // 向左飘
+          this.vx = -Math.random() * speedBase;
           this.vy = (Math.random() - 0.5) * speedBase;
         } else if (edge === 2) { // 下
           this.x = Math.random() * w;
           this.y = h - Math.random() * border;
           this.vx = (Math.random() - 0.5) * speedBase;
-          this.vy = -Math.random() * speedBase; // 向上飘
+          this.vy = -Math.random() * speedBase;
         } else { // 左
           this.x = Math.random() * border;
           this.y = Math.random() * h;
-          this.vx = Math.random() * speedBase; // 向右飘
+          this.vx = Math.random() * speedBase;
           this.vy = (Math.random() - 0.5) * speedBase;
         }
 
-        this.size = Math.random() * 2 + 0.5; // 大小
+        this.size = Math.random() * 2 + 1; // 基础大小
         this.life = 0;
-        this.maxLife = Math.random() * 100 + 50; // 寿命
+        this.maxLife = Math.random() * 120 + 60;
         this.alpha = 0;
-        this.angle = Math.random() * Math.PI * 2; // 旋转角度
-        this.spin = (Math.random() - 0.5) * 0.1; // 自转速度
-        
-        // 形状：0=圆形, 1=四角星
-        this.type = Math.random() > 0.3 ? 'star' : 'circle'; 
+        this.angle = Math.random() * Math.PI * 2;
+        this.spin = (Math.random() - 0.5) * 0.05; 
+
+        // ✨ 随机形状分配：
+        // 15% 几率是大五角星 (Pentagram)
+        // 40% 几率是四角星 (Star)
+        // 45% 几率是圆点 (Circle)
+        const typeRand = Math.random();
+        if (typeRand > 0.85) {
+          this.type = 'pentagram';
+          this.size = this.size * 1.8; // 五角星放大 1.8 倍
+        } else if (typeRand > 0.45) {
+          this.type = 'star';
+        } else {
+          this.type = 'circle';
+        }
       }
 
       update() {
@@ -139,14 +150,13 @@ const StarBorderParticles = () => {
         this.life++;
         this.angle += this.spin;
 
-        // 淡入淡出逻辑
+        // 淡入淡出
         if (this.life < 20) {
           this.alpha = this.life / 20;
         } else if (this.life > this.maxLife - 20) {
           this.alpha = (this.maxLife - this.life) / 20;
         }
 
-        // 死亡重置
         if (this.life >= this.maxLife) {
           this.reset();
         }
@@ -156,24 +166,38 @@ const StarBorderParticles = () => {
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
-        ctx.globalAlpha = this.alpha * (Math.random() * 0.5 + 0.5); // 闪烁效果
+        ctx.globalAlpha = this.alpha * (Math.random() * 0.4 + 0.6); // 闪烁
         ctx.fillStyle = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
-        ctx.shadowBlur = 10; // 发光
+        ctx.shadowBlur = 8;
         ctx.shadowColor = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
 
-        if (this.type === 'star') {
-          // 画四角星 (Sparkle)
+        if (this.type === 'pentagram') {
+          // 🌟 绘制五角星 (Pentagram)
+          ctx.beginPath();
+          // 五角星有5个顶点，旋转5次绘制
+          for (let i = 0; i < 5; i++) {
+            ctx.lineTo(0, -this.size * 2.5); // 外顶点 (更长)
+            ctx.rotate(Math.PI / 5);
+            ctx.lineTo(0, -this.size * 1.0); // 内凹点
+            ctx.rotate(Math.PI / 5);
+          }
+          ctx.closePath();
+          ctx.fill();
+
+        } else if (this.type === 'star') {
+          // ✨ 绘制四角星 (Sparkle)
           ctx.beginPath();
           for (let i = 0; i < 4; i++) {
-            ctx.lineTo(0, this.size * -1.5);
+            ctx.lineTo(0, this.size * -1.8);
             ctx.bezierCurveTo(this.size * 0.5, this.size * -0.5, this.size * 0.5, this.size * -0.5, this.size, 0);
             ctx.rotate(Math.PI / 2);
           }
           ctx.fill();
+
         } else {
-          // 画圆点
+          // ⚪ 绘制圆点
           ctx.beginPath();
-          ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+          ctx.arc(0, 0, this.size * 0.8, 0, Math.PI * 2);
           ctx.fill();
         }
 
@@ -181,12 +205,10 @@ const StarBorderParticles = () => {
       }
     }
 
-    // 初始化粒子
     for (let i = 0; i < particleCount; i++) {
       particles.push(new Particle());
     }
 
-    // 动画循环
     const render = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const rgb = hexToRgb(themeColor);
@@ -205,7 +227,7 @@ const StarBorderParticles = () => {
       window.removeEventListener('resize', resizeCanvas);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [themeColor]); // 当主题色变化时重新渲染
+  }, [themeColor]);
 
   return (
     <canvas 
@@ -214,8 +236,6 @@ const StarBorderParticles = () => {
     />
   );
 };
-
-
 
 // --- 工具函数：解析 LRC 歌词 ---
 const parseLRC = (lrcText) => {
