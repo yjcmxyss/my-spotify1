@@ -49,6 +49,75 @@ const GlobalStyles = () => (
   `}</style>
 );
 
+const ScreenFrame = () => {
+  const { themeColor } = useContext(PlayerContext);
+
+  return (
+    <div className="fixed inset-0 z-[60] pointer-events-none">
+      <style>{`
+        @keyframes spin-aurora {
+          0% { --rotate-angle: 0deg; }
+          100% { --rotate-angle: 360deg; }
+        }
+        
+        /* 自定义属性动画需要 CSS Houdini 支持，为了兼容性我们用伪元素旋转 */
+        @keyframes spin-pseudo {
+          0% { transform: translate(-50%, -50%) rotate(0deg); }
+          100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+      `}</style>
+
+      {/* 容器：定义遮罩，只显示边缘 4px */}
+      <div 
+        className="absolute inset-0 overflow-hidden"
+        style={{
+          // 这里的 padding 控制光边的粗细
+          padding: '4px', 
+          // 这里的 radius 控制圆角
+          borderRadius: '0px', 
+          // 核心黑科技：使用 mask 合成，把中间挖空
+          mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+          maskComposite: 'exclude',
+          WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+          WebkitMaskComposite: 'xor',
+        }}
+      >
+        {/* 背景旋转层：比屏幕大很多，中心旋转 */}
+        <div 
+          className="absolute top-1/2 left-1/2 w-[200vmax] h-[200vmax]"
+          style={{
+            // 这是一个五彩斑斓但以主题色为主的渐变
+            background: `conic-gradient(
+              from 0deg, 
+              transparent 0%, 
+              ${themeColor} 10%, 
+              transparent 20%, 
+              transparent 40%, 
+              #ffffff 50%, 
+              transparent 60%, 
+              transparent 80%, 
+              ${themeColor} 90%, 
+              transparent 100%
+            )`,
+            animation: 'spin-pseudo 8s linear infinite',
+            opacity: 0.8,
+            filter: 'blur(20px)', // 让光线晕开，像极光
+          }}
+        ></div>
+      </div>
+
+      {/* 额外的内发光层 (增加氛围) */}
+      <div 
+        className="absolute inset-0"
+        style={{
+          boxShadow: `inset 0 0 40px -10px ${themeColor}40`,
+          borderRadius: '0px'
+        }}
+      ></div>
+    </div>
+  );
+};
+
 
 
 // --- 工具函数：解析 LRC 歌词 ---
@@ -2765,6 +2834,7 @@ const AppWrapper = () => {
       
       {/* ✨ 0. 动态流光背景层 (最底层) */}
       <AmbientBackground />
+       <ScreenFrame />
 
       {/* 1. 左侧导航栏 */}
       {/* z-10 确保浮在背景之上，bg-transparent 交给 Sidebar 内部处理玻璃效果 */}
