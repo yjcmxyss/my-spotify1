@@ -2896,17 +2896,51 @@ const fullScreenBrightStyle = {
         </div>
         
         {/* 艺人列表 */}
-        <div className="flex gap-4 md:gap-6 overflow-x-auto pb-4 no-scrollbar">
+   <section className="mb-10 md:mb-14 relative z-10">
+        <div className="flex items-end justify-between mb-4 md:mb-6 pl-2">
+          <div className="flex flex-col gap-1 relative">
+             {/* 氛围光斑 */}
+             <div 
+               className="absolute -bottom-10 -right-10 w-40 h-40 blur-[80px] opacity-30 pointer-events-none transition-colors duration-1000"
+               style={{ backgroundColor: themeColor }}
+             ></div>
+
+             <span 
+               className="font-serif italic text-sm md:text-base tracking-[0.2em] text-white/60"
+               style={{ color: themeColor }}
+             >
+               Featured Artists
+             </span>
+             <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight drop-shadow-md">
+               推荐艺人
+             </h2>
+          </div>
+          
+          <div className="hidden md:flex items-center gap-2 text-xs font-bold text-white/40 hover:text-white cursor-pointer transition-colors group">
+             <span>VIEW ALL</span>
+             <div className="w-8 h-[1px] bg-white/20 group-hover:bg-white transition-colors"></div>
+          </div>
+        </div>
+        
+        {/* 
+           🔴 关键修复点：
+           1. py-4: 上下都加 padding，防止 scale 放大时顶部或底部被切掉
+           2. pl-2: 左侧留一点空隙
+           3. -ml-2: 稍微向左拉回一点，保持视觉对齐
+        */}
+        <div className="flex gap-4 overflow-x-auto py-4 pl-2 -ml-2 no-scrollbar">
           {recommendedArtists.map((artist, idx) => (
             <div 
               key={idx} 
               onClick={() => setCurrentArtist(artist.name)} 
-              className="flex flex-col items-center gap-3 min-w-[100px] md:min-w-[140px] cursor-pointer group"
+              // ✨ 优化点：增加 group 和相对定位
+              className="relative flex flex-col items-center gap-3 min-w-[120px] md:min-w-[160px] p-3 rounded-2xl cursor-pointer group transition-all duration-300 hover:bg-white/5"
             >
-              {/* 头像容器：双层光圈 */}
-              <div className="relative w-24 h-24 md:w-32 md:h-32">
+              {/* 头像容器 */}
+              <div className="relative w-24 h-24 md:w-32 md:h-32 shadow-lg group-hover:shadow-2xl transition-all duration-500 rounded-full">
+                {/* 背景光晕：悬停时出现 */}
                 <div 
-                  className="absolute inset-0 rounded-full blur-md opacity-0 group-hover:opacity-60 transition-opacity duration-500"
+                  className="absolute inset-0 rounded-full blur-xl opacity-0 group-hover:opacity-50 transition-opacity duration-500"
                   style={{ backgroundColor: themeColor }}
                 ></div>
                 
@@ -2914,23 +2948,29 @@ const fullScreenBrightStyle = {
                   src={artist.cover} 
                   alt={artist.name} 
                   className="w-full h-full object-cover rounded-full relative z-10 border-2 border-transparent group-hover:scale-105 transition duration-500" 
+                  // 鼠标悬停时，边框变色
+                  style={{ borderColor: 'transparent' }} 
+                  onMouseEnter={(e) => e.currentTarget.style.borderColor = themeColor}
+                  onMouseLeave={(e) => e.currentTarget.style.borderColor = 'transparent'}
                 />
               </div>
               
-              <div className="text-center mt-2">
-                <div className="font-bold text-white text-sm md:text-base tracking-wide group-hover:text-[var(--primary-color)] transition-colors" style={{'--primary-color': themeColor}}>
+              <div className="text-center z-10">
+                <div className="font-bold text-white text-sm md:text-base tracking-wide group-hover:text-[var(--primary-color)] transition-colors truncate w-full px-2" style={{'--primary-color': themeColor}}>
                   {artist.name}
                 </div>
-                <div className="text-[10px] md:text-xs text-neutral-500 font-medium font-serif italic">Artist</div>
+                <div className="text-[10px] md:text-xs text-neutral-500 font-medium font-serif italic mt-0.5 group-hover:text-neutral-300 transition-colors">
+                  Artist
+                </div>
               </div>
             </div>
           ))}
+          
           {recommendedArtists.length === 0 && (
-             <div className="text-neutral-500 text-sm">暂无艺人数据</div>
+             <div className="text-neutral-500 text-sm pl-2">暂无艺人数据</div>
           )}
         </div>
       </section>
-
       {/* 歌曲推荐板块 (保持原样，或可按需微调) */}
       <section>
         <div className="flex justify-between items-end mb-4 md:mb-6 pl-2">
