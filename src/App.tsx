@@ -1671,122 +1671,125 @@ const PlayerBar = () => {
 
   if (!currentSong) return null;
 
-  // 计算进度百分比，用于样式动态填充
   const progressPercent = currentSong.duration ? (progress / currentSong.duration) * 100 : 0;
 
   return (
-    <div 
-      className="fixed bottom-0 left-0 right-0 z-50 transition-all duration-500"
-    >
-      {/* 🌟 1. 独立悬浮层容器 (桌面端有悬浮感，手机端贴底) */}
+    <div className="fixed bottom-0 left-0 right-0 z-50 transition-all duration-500">
+      
+      {/* 🌟 核心容器：通透玻璃拟态 */}
       <div 
-        className="mx-0 md:mx-4 mb-0 md:mb-4 h-[70px] md:h-[84px] rounded-none md:rounded-2xl flex items-center justify-between px-4 md:px-6 relative overflow-hidden"
+        className="mx-0 md:mx-6 mb-0 md:mb-6 h-[70px] md:h-[88px] rounded-none md:rounded-3xl flex items-center justify-between px-4 md:px-6 relative overflow-hidden transition-all ease-out"
         style={{
-          background: 'rgba(20, 20, 20, 0.75)', // 深色半透明基底
-          backdropFilter: 'blur(25px) saturate(180%)', // 强磨砂 + 增加饱和度
-          borderTop: '1px solid rgba(255,255,255,0.1)', // 顶部微光
-          border: window.innerWidth > 768 ? '1px solid rgba(255,255,255,0.08)' : '', // 桌面端全边框
-          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)', // 深度阴影
+          // ✨ 关键修改：极低不透明度 + 高模糊 = 高级玻璃感
+          background: 'rgba(0, 0, 0, 0.3)', 
+          backdropFilter: 'blur(40px) saturate(150%)', // 提升模糊度，增加色彩饱和度
+          border: window.innerWidth > 768 ? '1px solid rgba(255,255,255,0.08)' : 'border-top: 1px solid rgba(255,255,255,0.05)',
+          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)', // 深邃阴影
+          borderTop: '1px solid rgba(255,255,255,0.1)' // 顶部高光
         }}
         onClick={(e) => {
           if (window.innerWidth < 768) setShowLyrics(true);
         }}
       >
-        
-        {/* 🌟 2. 手机端顶部极光进度条 (极细，带光晕) */}
+        {/* 手机端极光进度条 */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-white/5 md:hidden pointer-events-none">
            <div 
              className="h-full relative transition-all duration-200 ease-linear"
              style={{ 
                width: `${progressPercent}%`, 
                backgroundColor: themeColor,
-               boxShadow: `0 0 10px ${themeColor}, 0 0 5px ${themeColor}` // 霓虹光晕
+               boxShadow: `0 0 10px ${themeColor}`
              }}
            />
         </div>
 
-        {/* --- 左侧：歌曲信息 (黑胶效果) --- */}
+        {/* --- 左侧：方形封面 + 信息 --- */}
         <div className="flex items-center gap-4 flex-1 w-0 min-w-0">
-          {/* 旋转黑胶 */}
+          
+          {/* ✨ 修改点：方形封面 (带微弱光晕) */}
           <div 
              className="relative flex-shrink-0 cursor-pointer group" 
              onClick={(e) => { e.stopPropagation(); setShowLyrics(true); }}
           >
-            <div className={`relative w-10 h-10 md:w-14 md:h-14 rounded-full overflow-hidden shadow-2xl border border-white/10 ${isPlaying ? 'animate-[spin_4s_linear_infinite]' : ''}`}>
-              <img src={currentSong.cover} className="w-full h-full object-cover opacity-90" alt="thumb" />
-              {/* 黑胶质感遮罩 */}
-              <div className="absolute inset-0 bg-[radial-gradient(circle,transparent_30%,#000_100%)] opacity-40"></div>
-              {/* 中心孔 */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 md:w-3.5 md:h-3.5 bg-[#1a1a1a] rounded-full border border-neutral-700"></div>
+            <div 
+              className="relative w-12 h-12 md:w-16 md:h-16 rounded-lg md:rounded-xl overflow-hidden shadow-lg transition-transform duration-500 ease-out group-hover:scale-105"
+              style={{ boxShadow: isPlaying ? `0 8px 20px -6px ${themeColor}60` : 'none' }} // 播放时封面下有淡淡彩光
+            >
+              <img 
+                src={currentSong.cover} 
+                className="w-full h-full object-cover transition-opacity duration-300" 
+                alt="cover" 
+              />
+              {/* 图片上的高光层，增加立体感 */}
+              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none opacity-50"></div>
+              
+              {/* 悬停时的遮罩提示 */}
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Maximize2 size={20} className="text-white drop-shadow-md" />
+              </div>
             </div>
           </div>
           
+          {/* 文本信息 */}
           <div className="overflow-hidden flex flex-col justify-center">
-             {/* 歌名跑马灯容器 */}
-            <div className="relative h-5 md:h-6 overflow-hidden w-full mask-linear-fade">
+             {/* 歌名跑马灯 */}
+            <div className="relative h-6 overflow-hidden w-full mask-linear-fade">
               <div 
-                className="whitespace-nowrap font-bold text-white text-sm md:text-base cursor-pointer hover:underline"
-                // 简单的判断：如果字数多，应用滚动动画
+                className="whitespace-nowrap font-bold text-white text-base cursor-pointer hover:underline tracking-tight"
                 style={{ 
-                   animation: currentSong.title.length > 15 ? 'marquee 10s linear infinite' : 'none',
-                   display: 'inline-block'
+                   animation: currentSong.title.length > 15 ? 'marquee 12s linear infinite' : 'none',
+                   display: 'inline-block',
+                   textShadow: '0 2px 4px rgba(0,0,0,0.5)' // 增加文字阴影，防止背景太透看不清
                 }}
                 onClick={(e) => { e.stopPropagation(); setShowLyrics(true); }}
               >
                 {currentSong.title}
-                {currentSong.title.length > 15 && <span className="mx-4">{currentSong.title}</span>}
+                {currentSong.title.length > 15 && <span className="mx-6 text-white/50">{currentSong.title}</span>}
               </div>
             </div>
             
             <div 
-              className="text-white/50 text-xs truncate cursor-pointer hover:text-white transition-colors w-fit"
+              className="text-white/60 text-xs md:text-sm truncate cursor-pointer hover:text-white transition-colors w-fit font-medium"
               onClick={(e) => { e.stopPropagation(); goToArtist(currentSong.artist); }}
             >
               {currentSong.artist}
             </div>
           </div>
 
-          {/* 手机端爱心 */}
           <button 
             className="md:hidden p-2 -mr-2 active:scale-90 transition"
             onClick={(e) => { e.stopPropagation(); toggleLike(currentSong.id); }}
           >
-             <Heart size={20} fill={likedSongs.has(currentSong.id) ? themeColor : "none"} style={{ color: likedSongs.has(currentSong.id) ? themeColor : '#ffffff60' }} />
+             <Heart size={22} fill={likedSongs.has(currentSong.id) ? themeColor : "none"} style={{ color: likedSongs.has(currentSong.id) ? themeColor : '#ffffff80' }} />
           </button>
         </div>
 
-        {/* --- 中间：控制台 (Pro版) --- */}
-        <div className="flex flex-col items-center justify-center md:w-[40%] gap-1.5 z-10 flex-shrink-0">
+        {/* --- 中间：播放控制 --- */}
+        <div className="flex flex-col items-center justify-center md:w-[40%] gap-2 z-10 flex-shrink-0">
           
-          {/* 按钮组 */}
-          <div className="flex items-center gap-6 md:gap-8">
+          <div className="flex items-center gap-6 md:gap-10">
             <Shuffle size={18} className="hidden md:block cursor-pointer text-white/40 hover:text-white transition-colors" />
             
             <SkipBack 
-              size={24} 
-              className="hidden md:block cursor-pointer text-white hover:text-white hover:scale-110 active:scale-90 transition-all" 
+              size={26} 
+              className="hidden md:block cursor-pointer text-white/90 hover:text-white hover:scale-110 active:scale-90 transition-all drop-shadow-md" 
               onClick={prevSong} 
             />
             
-            {/* 🌟 核心播放按钮：带呼吸光影 */}
+            {/* 播放按钮：纯净白块 + 光晕 */}
             <button 
               onClick={(e) => { e.stopPropagation(); togglePlay(); }}
-              className="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center bg-white text-black hover:scale-105 active:scale-95 transition-all relative z-10"
+              className="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center bg-white text-black hover:scale-110 active:scale-95 transition-all relative z-10 shadow-lg"
               style={{
-                boxShadow: isPlaying ? `0 0 20px ${themeColor}66` : 'none', // 播放时发光
-                animation: isPlaying ? 'pulse-shadow 2s infinite' : 'none'
+                boxShadow: isPlaying ? `0 0 25px ${themeColor}50` : '0 0 0 transparent'
               }}
             >
-              {isPlaying ? (
-                <Pause size={20} fill="black" />
-              ) : (
-                <Play size={20} fill="black" className="ml-1" />
-              )}
+              {isPlaying ? <Pause size={22} fill="black" /> : <Play size={22} fill="black" className="ml-1" />}
             </button>
             
             <SkipForward 
-              size={24} 
-              className="hidden md:block cursor-pointer text-white hover:text-white hover:scale-110 active:scale-90 transition-all" 
+              size={26} 
+              className="hidden md:block cursor-pointer text-white/90 hover:text-white hover:scale-110 active:scale-90 transition-all drop-shadow-md" 
               onClick={() => nextSong(false)} 
             />
             
@@ -1800,32 +1803,32 @@ const PlayerBar = () => {
             </button>
           </div>
           
-          {/* 🌟 桌面端进度条 (自定义 Range Input) */}
-          <div className="hidden md:flex w-full items-center gap-3 text-[10px] text-white/50 font-medium font-mono tracking-wider">
+          {/* 桌面端进度条：更细、更精致 */}
+          <div className="hidden md:flex w-full items-center gap-3 text-[11px] text-white/40 font-medium font-mono">
             <span className="w-8 text-right">{formatTime(progress)}</span>
             
-            <div className="relative flex-1 group h-4 flex items-center">
-              {/* 背景轨道 */}
-              <div className="absolute inset-0 bg-white/10 rounded-full h-1 my-auto overflow-hidden">
-                 {/* 已播放进度 (高亮) */}
+            <div className="relative flex-1 group h-3 flex items-center cursor-pointer">
+              {/* 轨道背景：半透明白 */}
+              <div className="absolute inset-0 bg-white/10 rounded-full h-[3px] my-auto overflow-hidden group-hover:h-[5px] transition-all">
+                 {/* 进度条 */}
                  <div 
-                   className="h-full transition-all duration-100 ease-linear"
+                   className="h-full transition-all duration-100 ease-linear rounded-r-full"
                    style={{ 
                      width: `${progressPercent}%`, 
-                     backgroundColor: themeColor 
+                     backgroundColor: themeColor,
+                     boxShadow: `0 0 10px ${themeColor}`
                    }}
                  />
               </div>
               
-              {/* 真实的 Input (透明，用于交互) */}
               <input 
                 type="range" min="0" max={currentSong.duration || 100} step="0.1" value={progress} onChange={handleProgressChange} 
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" 
               />
               
-              {/* 滑块指示器 (只在Hover或拖动时显示，或者一直显示小圆点) */}
+              {/* 滑块：仅在 hover 时放大显示 */}
               <div 
-                className="absolute h-3 w-3 bg-white rounded-full shadow-[0_0_10px_rgba(0,0,0,0.5)] pointer-events-none transition-all duration-100 z-10 group-hover:scale-125"
+                className="absolute h-3 w-3 bg-white rounded-full shadow-lg pointer-events-none transition-all duration-200 z-10 scale-0 group-hover:scale-100"
                 style={{ 
                   left: `${progressPercent}%`, 
                   transform: 'translateX(-50%)',
@@ -1838,31 +1841,27 @@ const PlayerBar = () => {
           </div>
         </div>
 
-        {/* --- 右侧：扩展功能 --- */}
-        <div className="hidden md:flex items-center justify-end w-1/3 gap-4 min-w-0">
-           {/* 爱心 */}
+        {/* --- 右侧：音量与功能 --- */}
+        <div className="hidden md:flex items-center justify-end w-1/3 gap-5 min-w-0">
            <button 
-             className="p-2 rounded-full hover:bg-white/5 text-white/40 hover:text-white transition active:scale-90"
+             className="p-2 rounded-full hover:bg-white/10 text-white/50 hover:text-white transition active:scale-90"
              onClick={() => toggleLike(currentSong.id)}
            >
-              <Heart size={18} fill={likedSongs.has(currentSong.id) ? themeColor : "none"} style={{ color: likedSongs.has(currentSong.id) ? themeColor : '' }} />
+              <Heart size={20} fill={likedSongs.has(currentSong.id) ? themeColor : "none"} style={{ color: likedSongs.has(currentSong.id) ? themeColor : '' }} />
            </button>
            
-           {/* 全屏歌词 */}
            <button 
-             className="p-2 rounded-full hover:bg-white/5 text-white/60 hover:text-white transition active:scale-90"
+             className="p-2 rounded-full hover:bg-white/10 text-white/50 hover:text-white transition active:scale-90"
              onClick={() => setShowLyrics(true)}
-             title="全屏歌词"
            >
-             <Maximize2 size={18} />
+             <Maximize2 size={20} />
            </button>
 
-           {/* 音量条 (迷你版) */}
-           <div className="flex items-center gap-2 group relative">
-             <Volume2 size={18} className="text-white/60 group-hover:text-white transition" />
-             <div className="w-20 h-1 bg-white/10 rounded-full relative overflow-hidden">
+           <div className="flex items-center gap-2 group relative py-2">
+             <Volume2 size={20} className="text-white/50 group-hover:text-white transition" />
+             <div className="w-24 h-1 bg-white/10 rounded-full relative overflow-hidden">
                 <div 
-                  className="h-full bg-white group-hover:bg-green-400 transition-colors" 
+                  className="h-full bg-white transition-colors" 
                   style={{ width: `${volume * 100}%`, backgroundColor: themeColor }}
                 />
                 <input 
@@ -1876,17 +1875,11 @@ const PlayerBar = () => {
 
       </div>
 
-      {/* CSS 补充动画 */}
       <style>{`
         @keyframes marquee {
           0% { transform: translateX(0); }
           100% { transform: translateX(-100%); }
         }
-        @keyframes pulse-shadow {
-          0%, 100% { box-shadow: 0 0 20px ${themeColor}40; }
-          50% { box-shadow: 0 0 30px ${themeColor}80; }
-        }
-        /* 歌名遮罩：两边渐隐 */
         .mask-linear-fade {
            mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
         }
@@ -1894,6 +1887,13 @@ const PlayerBar = () => {
     </div>
   );
 };
+
+
+
+
+
+
+
 
 const PlaylistDetail = ({ playlist }) => {
   const { 
