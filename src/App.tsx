@@ -2701,15 +2701,23 @@ const AppWrapper = () => {
   } = useContext(PlayerContext);
 
   return (
-    <div className="flex bg-black h-screen font-sans selection:bg-green-500 selection:text-black text-white overflow-hidden">
-
+    // 根容器：相对定位，黑色背景兜底
+    <div className="flex bg-[#0a0a0a] h-screen font-sans selection:bg-green-500 selection:text-black text-white overflow-hidden relative isolate">
+      
+      {/* ✨ 0. 动态流光背景层 (最底层) */}
       <AmbientBackground />
+
       {/* 1. 左侧导航栏 */}
-      <Sidebar />
+      {/* z-10 确保浮在背景之上，bg-transparent 交给 Sidebar 内部处理玻璃效果 */}
+      <div className="z-10 h-full flex-shrink-0 relative"> 
+        <Sidebar />
+      </div>
       
       {/* 2. 主内容区域 */}
-      <div className="flex-1 flex flex-col relative h-full">
-        {/* 根据 activeTab 切换显示不同的页面 */}
+      {/* backdrop-blur 使得流光背景在内容下若隐若现，bg-black/20 保证文字可读性 */}
+      <div className="flex-1 flex flex-col relative h-full z-10 bg-black/20 backdrop-blur-[5px] transition-all duration-500">
+        
+        {/* 路由视图渲染 */}
         {activeTab === 'home' && <HomePage />}
         {activeTab === 'search' && <SearchPage />}
         {activeTab === 'liked' && <LikedSongsPage />}
@@ -2718,10 +2726,11 @@ const AppWrapper = () => {
         {/* 底部播放条 */}
         <PlayerBar />
 
+        {/* 移动端底部导航 */}
         <MobileNav />
       </div>
 
-      {/* 3. 各类全屏/弹窗层 */}
+      {/* 3. 各类全屏/弹窗层 (z-index 较高) */}
       {showLyrics && <LyricsPage />}
       {showCreateModal && <CreatePlaylistModal />}
       {addToPlaylistModal.isOpen && <AddToPlaylistModal />}
@@ -2730,11 +2739,12 @@ const AppWrapper = () => {
       {/* 4. 全局提示组件 (Toast) */}
       <GlobalToast /> 
 
-      {/* 5. 动态歌词背景层 */}
+      {/* 5. 动态歌词背景层 (特殊的 Overlay) */}
       <LyricsContextWrapper />
     </div>
   );
 };
+
 
 // ==========================================
 // 主入口组件 (必须放在最后导出)
