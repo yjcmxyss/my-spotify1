@@ -2716,8 +2716,7 @@ const HomePage = () => {
   const fullScreenBrightStyle = {
     background: `
       radial-gradient(circle at 0% 0%, ${themeColor}AA 0%, transparent 70%),
-      radial-gradient(circle at 100% 0%, ${themeColor}66 0%, transparent 50%),
-     
+      radial-gradient(circle at 100% 0%, ${themeColor}66 0%, transparent 50%)
     `,
     transition: 'background 1s ease-in-out',
   };
@@ -2740,7 +2739,6 @@ const HomePage = () => {
   // 3. 默认主页仪表盘
   return (
     <div 
-      // 🌟 修改点：p-4 md:p-8 (手机端边距减小)
       className="flex-1 overflow-y-auto p-4 md:p-8 pb-32 no-scrollbar relative transition-all"
       style={fullScreenBrightStyle}
     >
@@ -2751,17 +2749,14 @@ const HomePage = () => {
 
       {/* 顶部 Header */}
       <header className="flex justify-between items-center mb-6 md:mb-8 relative z-10">
-        {/* 🌟 修改点：hidden md:flex (手机端隐藏历史记录按钮) */}
         <div className="hidden md:flex gap-2">
-          {/* <div className="w-8 h-8 bg-black/40 rounded-full flex items-center justify-center text-white cursor-pointer hover:bg-black/60 transition">{'<'}</div>
-          <div className="w-8 h-8 bg-black/40 rounded-full flex items-center justify-center text-white cursor-pointer hover:bg-black/60 transition">{'>'}</div> */}
+          {/* 历史记录按钮占位 */}
         </div>
         
-        {/* 用户区域 (手机端自动靠右) */}
+        {/* 用户区域 */}
         <div className="flex items-center gap-4 ml-auto md:ml-0">
           {user ? (
             <div className="flex items-center gap-3 bg-black/40 rounded-full p-1 pr-4 hover:bg-neutral-800 transition cursor-pointer group relative border border-white/5">
-              {/* 用户头像 */}
               <div 
                 className="w-8 h-8 rounded-full flex items-center justify-center text-black font-bold text-xs shadow-lg transition-colors duration-500"
                 style={{ backgroundColor: themeColor }}
@@ -2770,7 +2765,6 @@ const HomePage = () => {
               </div>
               <span className="text-white font-bold text-sm max-w-[100px] truncate">{user.username}</span>
               
-              {/* 下拉退出菜单 */}
               <div className="absolute top-full right-0 w-32 pt-2 z-50 hidden group-hover:block">
                 <div className="bg-neutral-800 rounded-md shadow-xl border border-white/10 overflow-hidden">
                   <button 
@@ -2804,29 +2798,65 @@ const HomePage = () => {
         </div>
       </header>
 
-      {/* 歌单板块 */}
-      <section className="mb-8 md:mb-10">
-       <h2 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6 text-white tracking-tight">今日推荐</h2>
-       {/* 🌟 修改点：grid-cols-2 lg:grid-cols-4 gap-4 (手机双列，间距缩小) */}
-       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      {/* =========================================
+          ✨ 歌单板块：氛围感标题 + 极简卡片
+         ========================================= */}
+      <section className="mb-10 md:mb-14 relative z-10">
+        <div className="flex flex-col gap-1 mb-6 md:mb-8 relative pl-2">
+           
+           {/* 1. 氛围光斑 */}
+           <div 
+             className="absolute -top-10 -left-10 w-32 h-32 md:w-48 md:h-48 rounded-full blur-[60px] md:blur-[80px] opacity-40 pointer-events-none transition-colors duration-1000"
+             style={{ backgroundColor: themeColor }}
+           ></div>
+
+           {/* 2. 装饰性英文小标 */}
+           <span 
+             className="font-serif italic text-sm md:text-base tracking-[0.2em] text-white/60 relative z-10"
+             style={{ color: themeColor }} 
+           >
+             Daily Curated
+           </span>
+
+           {/* 3. 主标题 */}
+           <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight relative z-10 drop-shadow-lg">
+             今日推荐
+           </h2>
+           
+           {/* 4. 装饰点缀 */}
+           <div className="flex gap-1 mt-1">
+             <div className="w-1 h-1 rounded-full bg-white/40"></div>
+             <div className="w-1 h-1 rounded-full bg-white/20"></div>
+           </div>
+        </div>
+
+        {/* 歌单列表 */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {playlists.map(playlist => (
             <div 
               key={playlist.id} 
               onClick={() => setCurrentPlaylist(playlist)} 
-              className="bg-white/5 backdrop-blur-md hover:bg-white/10 border border-white/5 p-3 md:p-4 rounded-xl transition duration-300 group cursor-pointer overflow-hidden relative"
+              // ✨ 样式优化：去掉了硬边框，增加纯净感
+              className="group relative cursor-pointer"
             >
-              <div className="relative mb-3 md:mb-4 aspect-square overflow-hidden rounded-lg shadow-lg">
-                <img src={playlist.cover} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" alt="" />
+              <div className="relative mb-3 aspect-square overflow-hidden rounded-lg shadow-lg">
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors z-10" />
+                <img src={playlist.cover} className="w-full h-full object-cover group-hover:scale-105 transition duration-700 ease-in-out" alt="" />
+                
                 {/* 播放按钮 */}
                 <button 
-                  className="absolute bottom-2 right-2 w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center shadow-xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300"
-                  style={{ backgroundColor: themeColor }}
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center bg-white/10 backdrop-blur-md border border-white/20 text-white opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 z-20 shadow-xl"
                 >
-                  <Play fill="black" stroke="none" className="ml-1 text-black w-4 h-4 md:w-5 md:h-5" />
+                  <Play fill="currentColor" className="ml-1 w-5 h-5" />
                 </button>
               </div>
-              <h3 className="font-bold mb-1 truncate text-white text-sm md:text-base">{playlist.name}</h3>
-              <p className="text-neutral-500 text-xs md:text-sm line-clamp-2">{playlist.description}</p>
+              
+              <h3 className="font-bold text-white text-base truncate pr-2 group-hover:text-[var(--primary-color)] transition-colors" style={{'--primary-color': themeColor}}>
+                {playlist.name}
+              </h3>
+              <p className="text-white/40 text-xs mt-1 line-clamp-1 font-medium tracking-wide">
+                {playlist.description}
+              </p>
             </div>
           ))}
           
@@ -2838,32 +2868,63 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* 推荐艺人板块 */}
-      <section className="mb-8 md:mb-10">
-        <h2 className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6 tracking-tight">推荐艺人</h2>
-        {/* 🌟 修改点：min-w-[100px] (手机端卡片变小) */}
+      {/* =========================================
+          ✨ 艺人板块：氛围感标题 + 光圈头像
+         ========================================= */}
+      <section className="mb-10 md:mb-14 relative z-10">
+        <div className="flex items-end justify-between mb-6 md:mb-8 pl-2">
+          <div className="flex flex-col gap-1 relative">
+             {/* 氛围光斑 */}
+             <div 
+               className="absolute -bottom-10 -right-10 w-40 h-40 blur-[80px] opacity-30 pointer-events-none transition-colors duration-1000"
+               style={{ backgroundColor: themeColor }}
+             ></div>
+
+             <span 
+               className="font-serif italic text-sm md:text-base tracking-[0.2em] text-white/60"
+               style={{ color: themeColor }}
+             >
+               Featured Artists
+             </span>
+             <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight drop-shadow-md">
+               推荐艺人
+             </h2>
+          </div>
+          
+          {/* 线条按钮 */}
+          <div className="hidden md:flex items-center gap-2 text-xs font-bold text-white/40 hover:text-white cursor-pointer transition-colors group">
+             <span>VIEW ALL</span>
+             <div className="w-8 h-[1px] bg-white/20 group-hover:bg-white transition-colors"></div>
+          </div>
+        </div>
+        
+        {/* 艺人列表 */}
         <div className="flex gap-4 md:gap-6 overflow-x-auto pb-4 no-scrollbar">
           {recommendedArtists.map((artist, idx) => (
             <div 
               key={idx} 
               onClick={() => setCurrentArtist(artist.name)} 
-              className="flex flex-col items-center gap-3 md:gap-4 min-w-[100px] md:min-w-[140px] p-2 md:p-4 rounded-xl hover:bg-neutral-800/40 transition cursor-pointer group"
+              className="flex flex-col items-center gap-3 min-w-[100px] md:min-w-[140px] cursor-pointer group"
             >
-              <div 
-                className="w-24 h-24 md:w-32 md:h-32 rounded-full shadow-lg relative overflow-hidden bg-neutral-800 border-2 transition-all duration-500"
-                style={{ borderColor: 'transparent' }}
-                onMouseEnter={(e) => e.currentTarget.style.borderColor = themeColor}
-                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'transparent'}
-              >
+              {/* 头像容器：双层光圈 */}
+              <div className="relative w-24 h-24 md:w-32 md:h-32">
+                <div 
+                  className="absolute inset-0 rounded-full blur-md opacity-0 group-hover:opacity-60 transition-opacity duration-500"
+                  style={{ backgroundColor: themeColor }}
+                ></div>
+                
                 <img 
                   src={artist.cover} 
                   alt={artist.name} 
-                  className="w-full h-full object-cover group-hover:scale-110 transition duration-500" 
+                  className="w-full h-full object-cover rounded-full relative z-10 border-2 border-transparent group-hover:scale-105 transition duration-500" 
                 />
               </div>
-              <div className="text-center">
-                <div className="font-bold text-white mb-1 text-sm md:text-base group-hover:underline truncate w-full">{artist.name}</div>
-                <div className="text-[10px] md:text-xs text-neutral-500 font-medium">艺人</div>
+              
+              <div className="text-center mt-2">
+                <div className="font-bold text-white text-sm md:text-base tracking-wide group-hover:text-[var(--primary-color)] transition-colors" style={{'--primary-color': themeColor}}>
+                  {artist.name}
+                </div>
+                <div className="text-[10px] md:text-xs text-neutral-500 font-medium font-serif italic">Artist</div>
               </div>
             </div>
           ))}
@@ -2873,9 +2934,9 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* 歌曲推荐板块 */}
+      {/* 歌曲推荐板块 (保持原样，或可按需微调) */}
       <section>
-        <div className="flex justify-between items-end mb-4 md:mb-6">
+        <div className="flex justify-between items-end mb-4 md:mb-6 pl-2">
            <h2 className="text-xl md:text-xl font-bold text-white hover:underline cursor-pointer tracking-tight">为您推荐</h2>
            <button 
              onClick={() => setActiveTab('search')}
@@ -2884,7 +2945,6 @@ const HomePage = () => {
              全部显示
            </button>
         </div>
-        {/* 🌟 修改点：grid-cols-2 (手机双列) */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
           {(allSongs || []).map(song => {
             const isCurrent = currentSong && currentSong.id === song.id;
@@ -2897,7 +2957,6 @@ const HomePage = () => {
                 <div className="relative mb-3 md:mb-4">
                   <img src={song.cover} className="w-full aspect-square object-cover rounded shadow-2xl border border-white/5" alt="" />
                   
-                  {/* 悬浮播放按钮 */}
                   <div 
                     className={`absolute bottom-2 right-2 shadow-xl w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all duration-300 ${ (isCurrent && isPlaying) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0'}`}
                     style={{ backgroundColor: themeColor }}
@@ -2906,8 +2965,6 @@ const HomePage = () => {
                   </div>
                 </div>
 
-                {/* 添加到歌单按钮 */}
-                {/* 🌟 修改点：opacity-100 md:opacity-0 (手机端始终显示，桌面端Hover显示) */}
                 <div className="absolute top-2 right-2 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
                   <button 
                     onClick={(e) => { e.stopPropagation(); openAddToPlaylistModal(song); }}
@@ -2921,7 +2978,6 @@ const HomePage = () => {
                 
                 <div className="text-white font-bold text-xs md:text-sm mb-1 truncate">{song.title}</div>
                 
-                {/* 艺人名跳转 */}
                 <div 
                   className="text-neutral-500 text-[10px] md:text-xs truncate hover:text-white hover:underline cursor-pointer w-fit transition-colors"
                   onClick={(e) => {
@@ -2942,6 +2998,9 @@ const HomePage = () => {
     </div>
   );
 };
+
+
+
 const LyricsOverlay = () => {
   const { currentSong, progress, setShowLyrics, lrcInputRef } = useContext(PlayerContext);
   const activeLyricRef = useRef(null);
