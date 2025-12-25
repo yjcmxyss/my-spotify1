@@ -3115,6 +3115,7 @@ const AppWrapper = () => {
       {/* ✨ 0. 动态流光背景层 (最底层) */}
       <AmbientBackground />
        <StarBorderParticles />
+       <ClickSparkles />
 
       {/* 1. 左侧导航栏 */}
       {/* z-10 确保浮在背景之上，bg-transparent 交给 Sidebar 内部处理玻璃效果 */}
