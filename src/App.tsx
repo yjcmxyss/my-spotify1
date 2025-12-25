@@ -2703,12 +2703,7 @@ const AppWrapper = () => {
   return (
     <div className="flex bg-black h-screen font-sans selection:bg-green-500 selection:text-black text-white overflow-hidden">
 
-       
-      {/* ✨ 新增：全局动态背景 (放在最底层) */}
       <AmbientBackground />
-
-      {/* 1. 左侧导航栏 (增加 backdrop-blur 让背景透过来) */}
-      <div className="z-10 h-full flex-shrink-0"> 
       {/* 1. 左侧导航栏 */}
       <Sidebar />
       
