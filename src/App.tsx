@@ -6,17 +6,42 @@ import {
   ArrowLeft, Clock, BadgeCheck, Mic2, Users, ListPlus, Repeat1, ArrowRight  
 } from 'lucide-react';
 
-// --- 全局样式 ---
+// --- 全局样式 & 字体 & 动画 ---
 const GlobalStyles = () => (
-  <style>{`
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
-      20%, 40%, 60%, 80% { transform: translateX(4px); }
-    }
-  `}</style>
+  <>
+    {/* 引入优雅的衬线字体 Playfair Display */}
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+    </style>
+    <style>{`
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      
+      /* 少女风专用字体类 */
+      .font-serif-elegant {
+        font-family: 'Playfair Display', serif;
+      }
+
+      /* 漂浮动画 */
+      @keyframes floatUp {
+        0% { transform: translateY(100vh) scale(0.5) rotate(0deg); opacity: 0; }
+        20% { opacity: 0.8; }
+        80% { opacity: 0.6; }
+        100% { transform: translateY(-20vh) scale(1.2) rotate(360deg); opacity: 0; }
+      }
+
+      @keyframes twinkle {
+        0%, 100% { opacity: 0.3; transform: scale(0.8); }
+        50% { opacity: 1; transform: scale(1.2); }
+      }
+
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+        20%, 40%, 60%, 80% { transform: translateX(4px); }
+      }
+    `}</style>
+  </>
 );
 
 // --- 工具函数：解析 LRC 歌词 ---
@@ -667,6 +692,49 @@ export const PlayerProvider = ({ children }) => {
   );
 };
 
+// [新增] 少女风氛围背景组件
+const SparkleBackground = ({ isActive }) => {
+  if (!isActive) return null;
+
+  // 生成随机粒子
+  const particles = useMemo(() => {
+    return Array.from({ length: 20 }).map((_, i) => ({
+      id: i,
+      left: Math.random() * 100 + '%',
+      animationDuration: 10 + Math.random() * 20 + 's',
+      animationDelay: Math.random() * 5 + 's',
+      icon: ['✨', '💖', '🌸', '☁️'][Math.floor(Math.random() * 4)],
+      size: Math.random() * 20 + 10 + 'px'
+    }));
+  }, []);
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+      {/* 柔和的奶油/粉色光晕背景 */}
+      <div className="absolute top-[-20%] left-[-20%] w-[80vw] h-[80vw] bg-[#FF9EAA] rounded-full mix-blend-screen filter blur-[100px] opacity-20 animate-pulse"></div>
+      <div className="absolute bottom-[-20%] right-[-20%] w-[80vw] h-[80vw] bg-[#FFF0F5] rounded-full mix-blend-screen filter blur-[120px] opacity-10"></div>
+
+      {/* 漂浮粒子 */}
+      {particles.map(p => (
+        <div
+          key={p.id}
+          className="absolute bottom-0 text-white/40 drop-shadow-md"
+          style={{
+            left: p.left,
+            fontSize: p.size,
+            animation: `floatUp ${p.animationDuration} linear infinite`,
+            animationDelay: p.animationDelay
+          }}
+        >
+          {p.icon}
+        </div>
+      ))}
+      
+      {/* 噪点纹理，增加胶片感 */}
+      <div className="absolute inset-0 bg-white/5 opacity-50 mix-blend-overlay" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22 opacity=%221%22/%3E%3C/svg%3E")' }}></div>
+    </div>
+  );
+};
 
 const FollowedArtistsPage = () => {
   const { 
@@ -785,7 +853,8 @@ const Sidebar = () => {
       { name: '天空蓝', value: '#3496ff' },
       { name: '明亮黄', value: '#27ffe2' },
       { name: '红色', value: '#ff2929' },
-      { name: '红色', value: '#ff87d3' },
+      { name: '红色', value: '#ff7ace' },
+      { name: '少女粉', value: '#FF9EAA' }, 
     ];
 
     return (
@@ -2641,17 +2710,29 @@ const AppWrapper = () => {
     showLyrics, 
     showCreateModal, 
     addToPlaylistModal, 
-    showAuthModal 
+    showAuthModal,
+    themeColor // 获取当前主题色
   } = useContext(PlayerContext);
 
+  // 🌟 判断是否开启“少女模式”
+  const isGirlishMode = themeColor === '#FF9EAA';
+
   return (
-    <div className="flex bg-black h-screen font-sans selection:bg-green-500 selection:text-black text-white overflow-hidden">
+    <div 
+      className={`flex h-screen overflow-hidden transition-all duration-1000 relative ${isGirlishMode ? 'font-serif-elegant selection:bg-[#FF9EAA] selection:text-white' : 'font-sans selection:bg-green-500 selection:text-black'} text-white`}
+      style={{
+        // 🌟 如果是少女模式，背景色改为深玫瑰色调，否则保持黑色
+        backgroundColor: isGirlishMode ? '#2a1a1e' : 'black', 
+      }}
+    >
+      {/* 🌟 插入少女风背景特效 */}
+      <SparkleBackground isActive={isGirlishMode} />
+
       {/* 1. 左侧导航栏 */}
       <Sidebar />
       
-      {/* 2. 主内容区域 */}
-      <div className="flex-1 flex flex-col relative h-full">
-        {/* 根据 activeTab 切换显示不同的页面 */}
+      {/* 2. 主内容区域 (增加 z-10 确保在背景之上) */}
+      <div className="flex-1 flex flex-col relative h-full z-10">
         {activeTab === 'home' && <HomePage />}
         {activeTab === 'search' && <SearchPage />}
         {activeTab === 'liked' && <LikedSongsPage />}
@@ -2660,19 +2741,20 @@ const AppWrapper = () => {
         {/* 底部播放条 */}
         <PlayerBar />
 
+        {/* 移动端导航 */}
         <MobileNav />
       </div>
 
-      {/* 3. 各类全屏/弹窗层 */}
+      {/* 3. 全屏/弹窗层 (z-index 很高，不受背景影响) */}
       {showLyrics && <LyricsPage />}
       {showCreateModal && <CreatePlaylistModal />}
       {addToPlaylistModal.isOpen && <AddToPlaylistModal />}
       {showAuthModal && <AuthModal />}
       
-      {/* 4. 全局提示组件 (Toast) */}
+      {/* 4. 全局提示 */}
       <GlobalToast /> 
 
-      {/* 5. 动态歌词背景层 */}
+      {/* 5. 歌词背景 */}
       <LyricsContextWrapper />
     </div>
   );
