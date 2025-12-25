@@ -237,6 +237,169 @@ const StarBorderParticles = () => {
   );
 };
 
+// ==========================================
+// ✨ 新增：鼠标点击爆炸粒子特效 (Click Explosion)
+// ==========================================
+const ClickSparkles = () => {
+  const { themeColor } = useContext(PlayerContext);
+  const canvasRef = useRef(null);
+  const particlesRef = useRef([]); // 使用 Ref 存储粒子数组，避免闭包问题
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let animationFrameId;
+
+    // 设置尺寸
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // 辅助：Hex 转 RGB
+    const hexToRgb = (hex) => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : { r: 255, g: 255, b: 255 };
+    };
+
+    // ✨ 爆炸粒子类
+    class Sparkle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        // 爆炸散射角度：随机
+        const angle = Math.random() * Math.PI * 2;
+        // 爆炸速度：随机
+        const speed = Math.random() * 4 + 2; 
+        
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        
+        this.friction = 0.94; // 摩擦力，让它慢慢停下来
+        this.gravity = 0.1;   // 微微的重力，更有质感
+        
+        this.life = 100;      // 存活时间
+        this.alpha = 1;
+
+        this.size = Math.random() * 4 + 2; // 稍微大一点，看清形状
+        
+        // 随机形状
+        const typeRand = Math.random();
+        if (typeRand > 0.7) this.type = 'pentagram'; // 30% 五角星
+        else if (typeRand > 0.4) this.type = 'star'; // 30% 四角星
+        else this.type = 'circle';
+        
+        // 随机自转
+        this.angle = Math.random() * Math.PI * 2;
+        this.spin = (Math.random() - 0.5) * 0.2;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        this.vx *= this.friction;
+        this.vy *= this.friction;
+        this.vy += this.gravity; // 加一点重力下坠
+        
+        this.life -= 2; // 衰减速度
+        this.alpha = this.life / 100;
+        this.angle += this.spin;
+      }
+
+      draw(ctx, rgb) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        ctx.globalAlpha = this.alpha;
+        ctx.fillStyle = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+        // 爆炸时发光更强
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+
+        if (this.type === 'pentagram') {
+          // 五角星
+          ctx.beginPath();
+          for (let i = 0; i < 5; i++) {
+            ctx.lineTo(0, -this.size * 2);
+            ctx.rotate(Math.PI / 5);
+            ctx.lineTo(0, -this.size * 0.8);
+            ctx.rotate(Math.PI / 5);
+          }
+          ctx.fill();
+        } else if (this.type === 'star') {
+          // 四角星
+          ctx.beginPath();
+          for (let i = 0; i < 4; i++) {
+            ctx.lineTo(0, -this.size * 1.5);
+            ctx.bezierCurveTo(this.size * 0.5, -this.size * 0.5, this.size * 0.5, -this.size * 0.5, this.size, 0);
+            ctx.rotate(Math.PI / 2);
+          }
+          ctx.fill();
+        } else {
+          // 圆点
+          ctx.beginPath();
+          ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+    }
+
+    // 监听点击事件
+    const handleClick = (e) => {
+      const count = 15; // 每次点击产生多少个粒子
+      for (let i = 0; i < count; i++) {
+        particlesRef.current.push(new Sparkle(e.clientX, e.clientY));
+      }
+    };
+    window.addEventListener('click', handleClick);
+
+    // 动画循环
+    const render = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const rgb = hexToRgb(themeColor);
+
+      // 更新和绘制所有粒子
+      // 倒序循环方便删除元素
+      for (let i = particlesRef.current.length - 1; i >= 0; i--) {
+        const p = particlesRef.current[i];
+        p.update();
+        p.draw(ctx, rgb);
+
+        // 移除死亡粒子
+        if (p.life <= 0) {
+          particlesRef.current.splice(i, 1);
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener('click', handleClick);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [themeColor]);
+
+  return (
+    <canvas 
+      ref={canvasRef}
+      className="fixed inset-0 z-[100] pointer-events-none" // z-100 确保在最上层
+    />
+  );
+};
+
 // --- 工具函数：解析 LRC 歌词 ---
 const parseLRC = (lrcText) => {
   if (!lrcText || typeof lrcText !== 'string') return [];
