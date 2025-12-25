@@ -812,7 +812,7 @@ const Sidebar = () => {
   // 🎨 主题选择组件
   const ThemeSelector = () => {
     const colors = [
-      { name: 'Spotify绿', value: '#737373' },
+      { name: 'Spotify绿', value: '#5f5f5f' },
       { name: '紫色', value: '#d099ff' }, 
       { name: '天空蓝', value: '#84bfff' },
       { name: '明亮黄', value: '#77ffed' },
