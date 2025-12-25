@@ -1213,7 +1213,7 @@ const Sidebar = () => {
           >
             <div className={`flex items-center gap-2 text-xs font-bold transition-colors ${showStarParticles ? 'text-white' : 'text-neutral-500 group-hover:text-neutral-300'}`}>
               <Sparkles size={14} />
-              <span>星河特效</span>
+              <span>星星特效</span>
             </div>
             
             {/* 开关滑块 */}
