@@ -3,7 +3,7 @@ import axios from 'axios';
 import { 
   Play, Pause, SkipBack, SkipForward, Volume2, Search, Home, Library, 
   ListMusic, Heart, Maximize2, ChevronDown, Repeat, Shuffle, X, Plus,
-  ArrowLeft, ArrowRight, Clock, BadgeCheck, Mic2, Users, ListPlus, Repeat1 
+  ArrowLeft, Clock, BadgeCheck, Mic2, Users, ListPlus, Repeat1, ArrowRight  
 } from 'lucide-react';
 
 
@@ -2244,7 +2244,6 @@ const HomePage = () => {
     goToArtist, openAddToPlaylistModal, user, setShowAuthModal, logout, themeColor
   } = useContext(PlayerContext);
 
-  // 1. 创建引用，用于控制滚动容器
   const scrollContainerRef = useRef(null);
 
   // --- 逻辑：从数据库歌曲中提取推荐艺人 ---
@@ -2262,8 +2261,24 @@ const HomePage = () => {
     return list.slice(0, 5);
   }, [allSongs]);
 
-  // 背景样式
-  const fullScreenBrightStyle = {
+  // --- 辅助函数：控制歌单左右滚动 ---
+  const scrollPlaylists = (direction) => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = scrollContainerRef.current.clientWidth * 0.8; 
+      scrollContainerRef.current.scrollBy({
+        left: direction === 'next' ? scrollAmount : -scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  // 🌟 关键修改：判断是否为少女模式
+  const isGirlishMode = themeColor === '#FF9EAA';
+
+  // 🌟 关键修改：如果是少女模式，背景设为透明 (transparent)，否则保持原有的深色渐变
+  const fullScreenBrightStyle = isGirlishMode ? {
+    background: 'transparent', // 让 AppWrapper 的粒子背景透出来
+  } : {
     background: `
       radial-gradient(circle at 0% 0%, ${themeColor}AA 0%, transparent 70%),
       radial-gradient(circle at 100% 0%, ${themeColor}66 0%, transparent 50%),
@@ -2272,19 +2287,8 @@ const HomePage = () => {
     transition: 'background 1s ease-in-out',
   };
 
-  // 2. 滚动控制函数
-  const scrollPlaylists = (direction) => {
-    if (scrollContainerRef.current) {
-      // 每次滚动大约滚 70% 的屏幕宽度，或者固定像素
-      const scrollAmount = scrollContainerRef.current.clientWidth * 0.7; 
-      scrollContainerRef.current.scrollBy({
-        left: direction === 'next' ? scrollAmount : -scrollAmount,
-        behavior: 'smooth'
-      });
-    }
-  };
+  // --- 渲染优先级判断 ---
 
-  // --- 渲染优先级 ---
   if (currentArtist) return <ArtistPage />;
 
   if (currentPlaylist) {
@@ -2298,25 +2302,28 @@ const HomePage = () => {
     );
   }
 
-  // --- 主页 ---
+  // --- 主页默认渲染 ---
   return (
     <div 
-      // 添加 w-full 确保布局宽度正常
       className="flex-1 w-full overflow-y-auto p-4 md:p-8 pb-32 no-scrollbar relative transition-all"
       style={fullScreenBrightStyle}
     >
-      <div 
-        className="absolute top-0 left-0 w-[80%] h-[80%] -z-10 blur-[150px] opacity-50 pointer-events-none transition-colors duration-1000 rounded-full"
-        style={{ backgroundColor: themeColor }}
-      ></div>
+      {/* 🌟 如果是少女模式，隐藏这个模糊光斑，因为我们有粒子了 */}
+      {!isGirlishMode && (
+        <div 
+          className="absolute top-0 left-0 w-[80%] h-[80%] -z-10 blur-[150px] opacity-50 pointer-events-none transition-colors duration-1000 rounded-full"
+          style={{ backgroundColor: themeColor }}
+        ></div>
+      )}
 
-      {/* Header (保持不变) */}
+      {/* 顶部 Header */}
       <header className="flex justify-between items-center mb-6 md:mb-8 sticky top-0 z-10 py-4 -my-4 bg-neutral-900/0 backdrop-blur-sm transition-colors">
         <div className="hidden md:flex gap-2">
           <div className="w-8 h-8 bg-black/40 rounded-full flex items-center justify-center text-white cursor-pointer hover:bg-black/60 transition">{'<'}</div>
           <div className="w-8 h-8 bg-black/40 rounded-full flex items-center justify-center text-white cursor-pointer hover:bg-black/60 transition">{'>'}</div>
         </div>
         
+        {/* 用户区域 */}
         <div className="flex items-center gap-4 ml-auto md:ml-0">
           {user ? (
             <div className="flex items-center gap-3 bg-black/40 rounded-full p-1 pr-4 hover:bg-neutral-800 transition cursor-pointer group relative border border-white/5">
@@ -2327,83 +2334,96 @@ const HomePage = () => {
                 {user.username[0].toUpperCase()}
               </div>
               <span className="text-white font-bold text-sm max-w-[100px] truncate">{user.username}</span>
+              
               <div className="absolute top-full right-0 w-32 pt-2 z-50 hidden group-hover:block">
                 <div className="bg-neutral-800 rounded-md shadow-xl border border-white/10 overflow-hidden">
-                  <button onClick={(e) => { e.stopPropagation(); logout(); }} className="w-full text-left px-4 py-3 md:py-2 text-sm text-red-400 hover:bg-white/10 hover:text-red-300 font-bold transition-colors">退出登录</button>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation(); 
+                      logout();
+                    }}
+                    className="w-full text-left px-4 py-3 md:py-2 text-sm text-red-400 hover:bg-white/10 hover:text-red-300 font-bold transition-colors"
+                  >
+                    退出登录
+                  </button>
                 </div>
               </div>
             </div>
           ) : (
             <div className="flex gap-2 md:gap-4">
-              <button onClick={() => setShowAuthModal(true)} className="text-neutral-400 font-bold hover:text-white transition px-2 py-1">注册</button>
-              <button onClick={() => setShowAuthModal(true)} className="bg-white text-black px-4 md:px-6 py-2 rounded-full font-bold hover:scale-105 transition text-sm md:text-base">登录</button>
+              <button 
+                onClick={() => setShowAuthModal(true)}
+                className="text-neutral-400 font-bold hover:text-white transition px-2 py-1"
+              >
+                注册
+              </button>
+              <button 
+                onClick={() => setShowAuthModal(true)}
+                className="bg-white text-black px-4 md:px-6 py-2 rounded-full font-bold hover:scale-105 transition text-sm md:text-base"
+              >
+                登录
+              </button>
             </div>
           )}
         </div>
       </header>
 
-      {/* 🌟 歌单板块 (主要修改区域) */}
+      {/* 歌单板块 */}
       <section className="mb-8 md:mb-10 group/section min-w-0 w-full">
-        {/* 标题栏 + 切换按钮 */}
-        <div className="flex justify-between items-center mb-4 md:mb-6">
-          <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">今日推荐</h2>
-          
-          {/* 只有当有歌单时才显示切换按钮 */}
-          {playlists.length > 0 && (
-            <div className="flex gap-2 opacity-100 md:opacity-0 group-hover/section:opacity-100 transition-opacity duration-300">
-              <button 
-                onClick={() => scrollPlaylists('prev')} 
-                className="w-8 h-8 md:w-9 md:h-9 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition text-white hover:scale-105 active:scale-95 backdrop-blur-md border border-white/5"
-              >
-                <ArrowLeft size={18} />
-              </button>
-              <button 
-                onClick={() => scrollPlaylists('next')} 
-                className="w-8 h-8 md:w-9 md:h-9 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition text-white hover:scale-105 active:scale-95 backdrop-blur-md border border-white/5"
-              >
-                <ArrowRight size={18} />
-              </button>
-            </div>
-          )}
-        </div>
+       <div className="flex justify-between items-center mb-4 md:mb-6">
+         <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">今日推荐</h2>
+         
+         {playlists.length > 0 && (
+           <div className="flex gap-2 opacity-100 md:opacity-0 group-hover/section:opacity-100 transition-opacity duration-300">
+             <button 
+               onClick={() => scrollPlaylists('prev')} 
+               className="w-8 h-8 md:w-9 md:h-9 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition text-white hover:scale-105 active:scale-95 backdrop-blur-md"
+             >
+               <ArrowLeft size={18} />
+             </button>
+             <button 
+               onClick={() => scrollPlaylists('next')} 
+               className="w-8 h-8 md:w-9 md:h-9 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition text-white hover:scale-105 active:scale-95 backdrop-blur-md"
+             >
+               <ArrowRight size={18} />
+             </button>
+           </div>
+         )}
+       </div>
 
-        {/* 歌单横向滚动列表 */}
-        <div 
-          ref={scrollContainerRef}
-          // 🌟 关键样式：flex (横排), overflow-x-auto (横滚), snap-x (对齐)
-          className="flex gap-4 md:gap-6 overflow-x-auto no-scrollbar pb-4 scroll-smooth snap-x snap-mandatory w-full max-w-full"
-        >
-          {playlists.map(playlist => (
-            <div 
-              key={playlist.id} 
-              onClick={() => setCurrentPlaylist(playlist)} 
-              // 🌟 关键样式：fixed width (w-40/w-56), flex-shrink-0 (防止被压缩)
-              className="flex-shrink-0 w-40 md:w-56 snap-start bg-white/5 backdrop-blur-md hover:bg-white/10 border border-white/5 p-3 md:p-4 rounded-xl transition duration-300 group cursor-pointer overflow-hidden relative"
-            >
-              <div className="relative mb-3 md:mb-4 aspect-square overflow-hidden rounded-lg shadow-lg">
-                <img src={playlist.cover} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" alt="" />
-                {/* 播放按钮 */}
-                <button 
-                  className="absolute bottom-2 right-2 w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center shadow-xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300"
-                  style={{ backgroundColor: themeColor }}
-                >
-                  <Play fill="black" stroke="none" className="ml-1 text-black w-4 h-4 md:w-5 md:h-5" />
-                </button>
+       <div 
+         ref={scrollContainerRef}
+         className="flex gap-4 md:gap-6 overflow-x-auto no-scrollbar pb-4 scroll-smooth snap-x snap-mandatory w-full max-w-full"
+       >
+          {playlists.length > 0 ? (
+            playlists.map(playlist => (
+              <div 
+                key={playlist.id} 
+                onClick={() => setCurrentPlaylist(playlist)} 
+                className="flex-shrink-0 w-40 md:w-56 snap-start bg-white/5 backdrop-blur-md hover:bg-white/10 border border-white/5 p-3 md:p-4 rounded-xl transition duration-300 group cursor-pointer overflow-hidden relative"
+              >
+                <div className="relative mb-3 md:mb-4 aspect-square overflow-hidden rounded-lg shadow-lg">
+                  <img src={playlist.cover} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" alt="" />
+                  <button 
+                    className="absolute bottom-2 right-2 w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center shadow-xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300"
+                    style={{ backgroundColor: themeColor }}
+                  >
+                    <Play fill="black" stroke="none" className="ml-1 text-black w-4 h-4 md:w-5 md:h-5" />
+                  </button>
+                </div>
+                <h3 className="font-bold mb-1 truncate text-white text-sm md:text-base">{playlist.name}</h3>
+                <p className="text-neutral-500 text-xs md:text-sm line-clamp-2">{playlist.description}</p>
               </div>
-              <h3 className="font-bold mb-1 truncate text-white text-sm md:text-base">{playlist.name}</h3>
-              <p className="text-neutral-500 text-xs md:text-sm line-clamp-2">{playlist.description}</p>
-            </div>
-          ))}
-          
-          {playlists.length === 0 && (
-            <div className="w-full py-10 text-center border border-white/5 rounded-xl bg-white/5 backdrop-blur-sm border-dashed">
+            ))
+          ) : (
+            <div className="w-full py-10 text-center border border-white/5 rounded-xl bg-white/5 backdrop-blur-sm">
               <p className="text-neutral-400 text-sm">暂无歌单，点击左侧或底部 "+" 号创建</p>
             </div>
           )}
         </div>
       </section>
 
-      {/* 推荐艺人板块 (保持原有横向滚动) */}
+      {/* 推荐艺人板块 */}
       <section className="mb-8 md:mb-10 min-w-0 w-full">
         <h2 className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6 tracking-tight">推荐艺人</h2>
         <div className="flex gap-4 md:gap-6 overflow-x-auto pb-4 no-scrollbar w-full max-w-full">
@@ -2419,11 +2439,7 @@ const HomePage = () => {
                 onMouseEnter={(e) => e.currentTarget.style.borderColor = themeColor}
                 onMouseLeave={(e) => e.currentTarget.style.borderColor = 'transparent'}
               >
-                <img 
-                  src={artist.cover} 
-                  alt={artist.name} 
-                  className="w-full h-full object-cover group-hover:scale-110 transition duration-500" 
-                />
+                <img src={artist.cover} alt={artist.name} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
               </div>
               <div className="text-center w-full">
                 <div className="font-bold text-white mb-1 text-sm md:text-base group-hover:underline truncate w-full">{artist.name}</div>
@@ -2431,13 +2447,11 @@ const HomePage = () => {
               </div>
             </div>
           ))}
-          {recommendedArtists.length === 0 && (
-             <div className="text-neutral-500 text-sm">暂无艺人数据</div>
-          )}
+          {recommendedArtists.length === 0 && <div className="text-neutral-500 text-sm">暂无艺人数据</div>}
         </div>
       </section>
 
-      {/* 歌曲推荐板块 (Grid 布局保持不变) */}
+      {/* 歌曲推荐板块 */}
       <section className="min-w-0 w-full">
         <div className="flex justify-between items-end mb-4 md:mb-6">
            <h2 className="text-xl md:text-xl font-bold text-white hover:underline cursor-pointer tracking-tight">为您推荐</h2>
@@ -2459,8 +2473,6 @@ const HomePage = () => {
               >
                 <div className="relative mb-3 md:mb-4">
                   <img src={song.cover} className="w-full aspect-square object-cover rounded shadow-2xl border border-white/5" alt="" />
-                  
-                  {/* 悬浮播放按钮 */}
                   <div 
                     className={`absolute bottom-2 right-2 shadow-xl w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all duration-300 ${ (isCurrent && isPlaying) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0'}`}
                     style={{ backgroundColor: themeColor }}
@@ -2468,8 +2480,8 @@ const HomePage = () => {
                     { (isCurrent && isPlaying) ? <Pause fill="black" size={16} className="text-black" /> : <Play fill="black" size={16} className="ml-0.5 text-black" /> }
                   </div>
                 </div>
-
-                {/* 添加到歌单按钮 */}
+                
+                {/* 🌟 修改按钮: w-7 h-7, opacity-100 */}
                 <div className="absolute top-2 right-2 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
                   <button 
                     onClick={(e) => { e.stopPropagation(); openAddToPlaylistModal(song); }}
@@ -2495,9 +2507,7 @@ const HomePage = () => {
             );
           })}
         </div>
-        {(!allSongs || allSongs.length === 0) && (
-             <div className="text-neutral-500 py-10 text-center">正在加载歌曲...</div>
-        )}
+        {(!allSongs || allSongs.length === 0) && <div className="text-neutral-500 py-10 text-center">正在加载歌曲...</div>}
       </section>
     </div>
   );
