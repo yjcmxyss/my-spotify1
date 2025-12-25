@@ -1457,10 +1457,6 @@ const LyricsPage = () => {
   const { currentSong, progress, setShowLyrics, isPlaying, likedSongs, toggleLike } = useContext(PlayerContext);
   const activeLyricRef = useRef(null);
 
-  // 🌟 存储 5 种关键颜色
-  const [colors, setColors] = useState(['#444', '#333', '#222', '#111', '#000']);
-  const [bgColor, setBgColor] = useState('#121212'); // 兜底背景色
-
   const activeLyricIndex = currentSong.lyrics?.findIndex((l, i) => {
     const next = currentSong.lyrics[i + 1];
     return progress >= l.time && (!next || progress < next.time);
@@ -1468,190 +1464,110 @@ const LyricsPage = () => {
 
   useEffect(() => {
     if (activeLyricRef.current) {
-      activeLyricRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      activeLyricRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
     }
   }, [activeLyricIndex]);
 
-  // 🌟 核心：提取 5 个区域的颜色
-  useEffect(() => {
-    if (!currentSong?.cover) return;
-    const img = new Image();
-    img.crossOrigin = "Anonymous";
-    img.src = currentSong.cover;
-
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        // 压缩到 10x10 取样
-        canvas.width = 10;
-        canvas.height = 10;
-        ctx.drawImage(img, 0, 0, 10, 10);
-        const data = ctx.getImageData(0, 0, 10, 10).data;
-
-        const getRGB = (x, y) => {
-          const i = (y * 10 + x) * 4;
-          return `rgb(${data[i]}, ${data[i+1]}, ${data[i+2]})`;
-        };
-
-        // 提取 5 个关键点：四角 + 中心
-        const newColors = [
-          getRGB(0, 0),  // 左上
-          getRGB(9, 0),  // 右上
-          getRGB(0, 9),  // 左下
-          getRGB(9, 9),  // 右下
-          getRGB(5, 5)   // 中心
-        ];
-        
-        setColors(newColors);
-        setBgColor(getRGB(5, 5)); // 背景底色用中心色
-
-      } catch (e) {
-        console.warn("颜色提取失败", e);
-      }
-    };
-  }, [currentSong.cover]);
-
   return (
-    <div 
-      className="fixed inset-0 z-[70] animate-in slide-in-from-bottom duration-500 flex flex-col items-center overflow-hidden"
-      style={{ 
-        backgroundColor: bgColor, 
-        transition: 'background-color 1s ease' 
-      }}
-    >
+    // 🌟 移除 bg-black，改为深灰背景兜底，避免加载瞬间太黑
+    <div className="fixed inset-0 z-[70] animate-in slide-in-from-bottom duration-500 flex flex-col items-center overflow-hidden bg-[#121212]">
+      
       <style>{`
-        /* 定义5种不同的漂浮动画 */
-        @keyframes float1 { 0%,100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(30%, 20%) scale(1.2); } }
-        @keyframes float2 { 0%,100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-20%, 30%) scale(1.1); } }
-        @keyframes float3 { 0%,100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(20%, -20%) scale(0.9); } }
-        @keyframes float4 { 0%,100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-30%, -20%) scale(1.3); } }
-        @keyframes float5 { 0%,100% { transform: translate(0, 0) scale(1.2); } 50% { transform: translate(10%, 10%) scale(0.8); } }
-
-        .vibrant-blob {
-          position: absolute;
-          border-radius: 50%;
-          filter: blur(80px); /* 极致模糊 */
-          opacity: 0.8; 
-          mix-blend-mode: screen; /* 滤色模式，叠加变亮 */
-          animation-timing-function: ease-in-out;
-          animation-iteration-count: infinite;
-          will-change: transform; /* 性能优化 */
+        @keyframes blobBounce {
+          0% { transform: scale(1.2) translate(0, 0); }
+          50% { transform: scale(1.3) translate(5%, 5%); }
+          100% { transform: scale(1.2) translate(0, 0); }
         }
-        
-        /* 🌟 暴力增强层：强制提升所有光球的鲜艳度 */
-        .color-booster {
-           filter: saturate(300%) brightness(120%) contrast(110%);
+        @keyframes slowSpin {
+          0% { transform: rotate(0deg) scale(1.4); }
+          100% { transform: rotate(360deg) scale(1.4); }
         }
-
         .mask-image-linear {
            mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
         }
       `}</style>
 
-      {/* 🌟 动态流体容器 (Color Booster) */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none color-booster">
-        
-        {/* 光球 1: 左上 */}
-        <div 
-          className="vibrant-blob w-[70vw] h-[70vw] -top-[10%] -left-[10%]"
-          style={{ 
-            backgroundColor: colors[0], 
-            animation: 'float1 15s infinite' 
-          }}
-        />
-
-        {/* 光球 2: 右上 */}
-        <div 
-          className="vibrant-blob w-[80vw] h-[80vw] -top-[20%] -right-[20%]"
-          style={{ 
-            backgroundColor: colors[1], 
-            animation: 'float2 18s infinite reverse' 
-          }}
-        />
-
-        {/* 光球 3: 左下 */}
-        <div 
-          className="vibrant-blob w-[70vw] h-[70vw] -bottom-[10%] -left-[20%]"
-          style={{ 
-            backgroundColor: colors[2], 
-            animation: 'float3 20s infinite' 
-          }}
-        />
-
-        {/* 光球 4: 右下 */}
-        <div 
-          className="vibrant-blob w-[90vw] h-[90vw] -bottom-[20%] -right-[10%]"
-          style={{ 
-            backgroundColor: colors[3], 
-            animation: 'float4 22s infinite reverse' 
-          }}
-        />
-
-        {/* 光球 5: 中心游走 (增加高光) */}
-        <div 
-          className="vibrant-blob w-[50vw] h-[50vw] top-[25%] left-[25%]"
-          style={{ 
-            backgroundColor: colors[4], 
-            animation: 'float5 25s infinite',
-            opacity: 0.6
-          }}
+      {/* 🌟 动态背景层 - 鲜艳版 */}
+      
+      {/* 1. 主色调层：高饱和度、高亮度、较低模糊度（保留更多色块细节） */}
+      <div className="absolute inset-0 -z-20 overflow-hidden pointer-events-none">
+        <img 
+          src={currentSong.cover} 
+          // saturate-200: 2倍饱和度 | brightness-125: 提升亮度 | opacity-80: 高不透明度
+          className="w-full h-full object-cover blur-[50px] opacity-80 scale-150 saturate-200 brightness-125 animate-[slowSpin_60s_linear_infinite]"
+          alt=""
         />
       </div>
 
-      {/* 🌟 遮罩层 (压暗边缘，突出中心文字) */}
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-[100px]" /> 
-      {/* 这里的 backdrop-blur-[100px] 是关键，它把所有光球再次融合，消除任何色块边界 */}
+      {/* 2. 氛围层：叠加模式，增加层次感 */}
+      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none mix-blend-screen"> 
+        {/* mix-blend-screen 让亮色更亮，适合艳丽风格 */}
+        <img 
+          src={currentSong.cover} 
+          className="w-full h-full object-cover blur-[80px] opacity-50 scale-150 saturate-150 animate-[blobBounce_20s_ease-in-out_infinite]"
+          alt=""
+        />
+      </div>
 
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60 pointer-events-none" />
+      {/* 🌟 3. 遮罩层：大幅减弱黑色，只保留必要的文字衬托 */}
+      {/* 全局仅加 10% 的黑，避免颜色脏掉 */}
+      <div className="absolute inset-0 -z-5 bg-black/10 backdrop-blur-[1px]" />
+      
+      {/* 仅在底部和顶部加渐变，中间保持通透 */}
+      <div className="absolute inset-0 -z-5 bg-gradient-to-b from-black/30 via-transparent to-black/60 pointer-events-none" />
 
 
       {/* --- UI 内容 --- */}
 
+      {/* 关闭按钮 */}
       <button 
         onClick={() => setShowLyrics(false)} 
-        className="absolute top-6 left-6 md:top-8 md:left-8 text-white/70 hover:text-white transition z-20 p-2 bg-black/10 hover:bg-black/20 rounded-full backdrop-blur-md border border-white/10"
+        // 按钮背景改淡，适应艳丽背景
+        className="absolute top-6 left-6 md:top-8 md:left-8 text-white hover:text-white transition z-20 p-2 bg-black/10 hover:bg-black/30 rounded-full backdrop-blur-md border border-white/10"
       >
         <ChevronDown size={32} />
       </button>
 
-      <div className="flex flex-col md:flex-row w-full max-w-6xl h-full items-center gap-6 md:gap-12 pt-16 md:pt-20 relative px-6 md:px-0 z-10">
+      <div className="flex flex-col md:flex-row w-full max-w-6xl h-full items-center gap-6 md:gap-12 pt-16 md:pt-20 relative px-6 md:px-0">
         
-        {/* 左侧：封面 */}
+        {/* 左侧 */}
         <div className="w-full md:w-1/2 flex flex-col items-center gap-6 md:gap-8 shrink-0">
           <div className="relative group">
             <img 
               src={currentSong.cover} 
-              className={`relative z-10 w-48 h-48 md:w-96 md:h-96 rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.4)] transition-transform duration-1000 border border-white/10 object-cover ${isPlaying ? 'scale-105' : 'scale-100'}`} 
+              className={`relative z-10 w-48 h-48 md:w-96 md:h-96 rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.5)] transition-transform duration-1000 border border-white/10 object-cover ${isPlaying ? 'scale-105' : 'scale-100'}`} 
               alt="cover" 
             />
           </div>
 
           <div className="flex items-center justify-between w-full max-w-xs md:max-w-sm relative z-10">
             <div className="flex-1 min-w-0 text-center md:text-left">
-              {/* 文字增加深色阴影，防止背景太亮看不清 */}
-              <h2 className="text-2xl md:text-3xl font-bold text-white truncate px-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{currentSong.title}</h2>
-              <p className="text-lg md:text-xl text-white/90 truncate px-2 font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{currentSong.artist}</p>
+              {/* 增加文字阴影，防止在亮背景下看不清 */}
+              <h2 className="text-2xl md:text-3xl font-bold text-white truncate px-2 drop-shadow-md shadow-black/50">{currentSong.title}</h2>
+              <p className="text-lg md:text-xl text-white/90 truncate px-2 font-medium drop-shadow-md shadow-black/50">{currentSong.artist}</p>
             </div>
             
             <Heart 
               size={28} 
-              className={`cursor-pointer transition-all active:scale-125 flex-shrink-0 drop-shadow-md ${likedSongs.has(currentSong.id) ? 'text-green-400' : 'text-white/70 hover:text-white'}`}
+              className={`cursor-pointer transition-all active:scale-125 flex-shrink-0 drop-shadow-md ${likedSongs.has(currentSong.id) ? 'text-green-400' : 'text-white/60 hover:text-white'}`}
               fill={likedSongs.has(currentSong.id) ? "currentColor" : "none"}
               onClick={() => toggleLike(currentSong.id)}
             />
           </div>
         </div>
         
-        {/* 右侧：歌词 */}
-        <div className="w-full md:w-1/2 flex flex-col items-center md:items-start h-full overflow-y-auto no-scrollbar scroll-smooth relative mask-image-linear">
+        {/* 右侧 */}
+        <div className="w-full md:w-1/2 flex flex-col items-center md:items-start h-full overflow-y-auto no-scrollbar scroll-smooth relative z-10 mask-image-linear">
           <div className="space-y-6 md:space-y-10 pb-32 md:pb-40 pt-20 md:pt-40 text-center md:text-left w-full px-4">
             {currentSong.lyrics?.map((line, idx) => (
               <p 
                 key={idx} 
                 ref={idx === activeLyricIndex ? activeLyricRef : null}
+                // 增加 drop-shadow 确保白色文字在浅色背景上也清晰
                 className={`transition-all duration-700 font-bold cursor-default origin-center md:origin-left drop-shadow-md ${
                   idx === activeLyricIndex 
                     ? 'text-white scale-110 md:scale-105 text-xl md:text-4xl opacity-100' 
@@ -1660,7 +1576,7 @@ const LyricsPage = () => {
               >
                 {line.text}
               </p>
-            )) || <p className="text-white/50 mt-20 text-xl">纯音乐 / 暂无歌词</p>}
+            )) || <p className="text-white/60 mt-20 text-xl drop-shadow-md">纯音乐 / 暂无歌词</p>}
           </div>
         </div>
 
